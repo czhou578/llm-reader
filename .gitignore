@@ -11,5 +11,4 @@ data/
 *.db-wal
 *.db-shm
 .DS_Store
-.review/runs/
-.review/cache/
+.review/
