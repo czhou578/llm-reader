@@ -1,0 +1,47 @@
+# Copy to ~/.config/llm-reader/config.toml. See DESIGN.md section 7.5.
+# This file holds the NAME of an environment variable for each key, never a key.
+
+[server]
+bind = "127.0.0.1"
+port = 7777
+
+[roles]
+strong = "claude"         # or "local" for private or offline reading
+fast   = "local"
+
+[profiles.claude]
+provider    = "anthropic"
+base_url    = "https://api.anthropic.com"
+model       = "claude-opus-5-5"
+api_key_env = "ANTHROPIC_API_KEY"
+
+[profiles.claude.pricing]   # list prices as of 2026-10-06, per million tokens; keep these current
+input      = 4.00
+cache_read = 0.20
+output     = 20.00
+
+[profiles.local]            # colinfer, llama.cpp server, vLLM, or Ollama; no key
+provider = "openai-compatible"
+base_url = "http://127.0.0.1:8000/v1"
+model    = "nvidia/Qwen3.8-27B-NVFP4"
+
+[profiles.haiku]            # alternative fast role on the credit
+provider    = "anthropic"
+base_url    = "https://api.anthropic.com"
+model       = "claude-haiku-5-5"
+api_key_env = "ANTHROPIC_API_KEY"
+
+[storage]
+data_dir  = "~/.local/share/llm-reader"
+books_dir = "~/books"       # the library list scans this directory
+
+[speech]
+engine = "whisper.cpp"      # local only
+model  = "~/.local/share/llm-reader/models/ggml-large-v3-turbo.bin"
+
+[notes]
+file = "~/notes/reading.md" # the y key appends a Q&A block here
+
+[reader]
+profile = "I am a software engineer. I know programming and basic probability."
+budget_tokens = 6000
