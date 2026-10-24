@@ -1,20 +1,32 @@
+// Boot: render the shell, fetch the config, then show the document from `?doc=<id>` or the library.
+import './styles/app.css';
 import { h, render } from 'preact';
-import * as pdfjs from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import * as api from './api/client.ts';
+import { App } from './app/App.tsx';
+import { registerCommands } from './app/commands.ts';
+import { countSession } from './app/hints.ts';
+import { route } from './app/router.ts';
+import { bootError, config, layoutName, view } from './app/session.ts';
+import { installDispatcher } from './commands/dispatcher.ts';
 
-// Scaffold entry. The viewer, commands, and chat panes from DESIGN.md go under src/web/.
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+async function boot(): Promise<void> {
+  const root = document.getElementById('app');
+  if (!root) throw new Error('index.html has no #app element');
+  render(h(App, null), root);
 
-async function main(): Promise<void> {
-  const health = await fetch('/api/health').then((r) => r.json()).catch(() => null);
-  render(
-    h('main', null, [
-      h('h1', null, 'llm-reader'),
-      h('p', null, `PDF.js ${pdfjs.version}`),
-      h('p', null, health ? `server ok (${health.node})` : 'server not reachable'),
-    ]),
-    document.getElementById('app')!,
-  );
+  countSession();
+  registerCommands();
+  installDispatcher({ layout: () => layoutName.value, active: () => view.value === 'reader' });
+  window.addEventListener('popstate', () => void route());
+
+  try {
+    config.value = await api.getConfig();
+  } catch (err) {
+    bootError.value = `The server is not reachable: ${err instanceof Error ? err.message : String(err)}`;
+    view.value = 'error';
+    return;
+  }
+  await route();
 }
 
-void main();
+void boot();

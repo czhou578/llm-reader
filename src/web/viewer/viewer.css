@@ -1,0 +1,52 @@
+/* Viewer theme. The canvas stays untouched; only the overlay and the background follow the color scheme. */
+.lr-viewer {
+  --lr-tint: rgb(255 232 140 / 0.35);
+  --lr-bar: rgb(196 160 40);
+  --lr-anchor: rgb(80 120 200 / 0.55);
+  --lr-bg: #e9e9ec;
+  outline: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lr-viewer {
+    --lr-tint: rgb(150 190 255 / 0.35);
+    --lr-bar: rgb(140 180 255);
+    --lr-anchor: rgb(150 190 255 / 0.6);
+    --lr-bg: #1f2023;
+  }
+}
+
+.lr-viewer-root {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: var(--lr-bg);
+}
+
+.lr-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.lr-tint {
+  position: absolute;
+  background: var(--lr-tint);
+  mix-blend-mode: multiply;
+  border-radius: 2px;
+}
+
+.lr-bar {
+  position: absolute;
+  width: 3px;
+  margin-left: -10px;
+  background: var(--lr-bar);
+  border-radius: 2px;
+}
+
+.lr-anchor {
+  position: absolute;
+  border-bottom: 1.5px solid var(--lr-anchor);
+}
+

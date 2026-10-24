@@ -16,7 +16,8 @@
     "start": "pnpm build && tsx src/server/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "llm-reader": "tsx bin/llm-reader.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",

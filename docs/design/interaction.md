@@ -18,7 +18,7 @@ I accept the working assumptions, with three notes:
 
 - **A single web page is the correct choice.** A browser extension cannot get the text layer of the built-in Chrome PDF viewer, and it cannot own the keymap reliably. PDF.js in our own page gives both.
 - **Side by side is a default, not a rule.** The answer pane can hide (`\`). Then answers appear as margin notes and in a reader overlay, and the PDF uses the full width. This helps on a laptop screen.
-- **Voice is optional, but the design must not depend on the keyboard alone.** Every action has a name in the command palette and in the keymap file. A later voice-command layer can call the same actions.
+- **The design does not depend on one input device.** Every action has a name in the command palette and in the keymap file. A foot pedal or a macro pad can call the same actions.
 
 ## 1. Passage selection without a mouse
 
@@ -152,7 +152,6 @@ The user can add presets in the keymap file (section 6.4). A user preset has a k
 - **Header.** The first line shows the first 80 characters of the staged text, the word count, and the target thread: "New question" or "Follow-up in thread #4".
 - **Input.** One line that grows to five lines. `Enter` sends. Shift+`Enter` adds a new line. `Up` in an empty input recalls the previous question.
 - **Thread toggle.** `Tab` toggles between "new thread" and "follow-up".
-- **Voice.** `v` in normal mode opens the same overlay with the microphone on. Ctrl+`Space` toggles the microphone inside the overlay. This is a chord, but it is rare, because `v` covers the common case.
 - **Close.** On `Enter` or `Esc`, the overlay closes and focus returns to the PDF pane in normal mode. The cursor does not move.
 
 ### 2.4 Follow-ups and threads
@@ -204,7 +203,6 @@ Global keys work in every mode.
 | `d` `s` `g` `x` `w` `t` | Define, simplify, gist, example, why, translate. | NORMAL, READER | Left hand. Mnemonic letters. |
 | `q` | Teach-back (v1.1). | NORMAL | |
 | `a` | Ask free text (open the ask overlay). | NORMAL, READER | "a" for ask. Typing follows, so the pinky load is small. |
-| `v` | Ask by voice (overlay with the microphone on). | NORMAL, READER | |
 | `.` | Repeat the last preset on the current selection. | NORMAL | |
 | `r` | Regenerate the last answer. | NORMAL, READER | |
 | `c` | Cancel the answer that streams now. | NORMAL, READER | |
@@ -220,7 +218,6 @@ Keys in `READER` mode only:
 | `Space` / `b` | Scroll the answer by one screen. |
 | `]` / `[` | Next / previous message in the thread. |
 | `y` | Copy the answer as Markdown. |
-| `,` | Read the answer aloud, or stop. |
 | `z` | Switch between the answer pane and the full reader overlay. |
 | `Esc` or `Tab` | Return to the PDF pane at the reading position. |
 
@@ -322,7 +319,7 @@ Two ways, and the user picks one per answer:
 
 ### 6.1 RSI-friendly choices
 
-- **No chords for frequent actions.** All frequent keys are single and unshifted. Shift appears only on `?` and `:`. Ctrl appears only on the microphone toggle in the overlay.
+- **No chords for frequent actions.** All frequent keys are single and unshifted. Shift appears only on `?` and `:`. Ctrl appears nowhere in the core loop.
 - **Home row and thumb.** `Space` (thumb) does the most frequent action. The right home row moves. The left hand asks.
 - **Two hands share the load.** Navigation is on the right hand and asks are on the left hand. Hint labels alternate hands.
 - **Key repeat.** A held `j`, `k`, `Space` or `b` repeats, with the normal OS repeat rate. Presets never repeat (section 2.5).
@@ -384,32 +381,7 @@ intent = "Walk through this argument one step at a time."
 
 The settings page validates the file and shows conflicts (two actions on one key) before it saves.
 
-### 6.5 Voice input for the question text
-
-| | Web Speech API | Local Whisper (whisper.cpp or faster-whisper on the local server) |
-|---|---|---|
-| Setup | None in Chrome and Edge. | Model download (about 150 MB to 1.5 GB). Needs a reasonable CPU or a GPU. |
-| Browser support | Chrome, Edge, Safari. Not Firefox. | Any browser. |
-| Privacy | Chrome sends the audio to Google servers. | Audio stays on the machine. |
-| Latency | Live partial text while the user speaks. | Text appears 0.5 to 2 s after the user stops. |
-| Technical words | Weak on rare terms. | Better. The page can pass the terms of the current page as a prompt hint. |
-| Offline | No. | Yes. |
-
-**Recommendation.** Ship the Web Speech API first, because it needs no setup. Put the speech engine behind one small interface, so local Whisper can replace it in v1.1. Use local Whisper by default when the user is on Firefox or turns on "private mode".
-
-**Interaction.** `v` starts the microphone. The microphone stops after 1.5 s of silence, or when the user presses `v` or `Enter`. The user does not hold a key, because a held key is a static load on the finger. The text appears in the ask overlay, and the user can edit it before `Enter`. A setting "send on silence" removes the `Enter` too.
-
-Later: voice commands ("explain", "next paragraph", "define") that map to the same action names.
-
-### 6.6 Read-aloud of answers
-
-- `,` in `READER` mode reads the answer aloud. `,` again stops it.
-- The MVP uses the browser `speechSynthesis` API. The voice and the rate are in the settings.
-- The current sentence of the answer is highlighted while it plays.
-- Later: a local TTS engine (for example, Piper) for better voices and offline use.
-- Option (later): auto-read every new answer. This lets the user keep the eyes on the PDF.
-
-### 6.7 Fonts, layout and themes for long sessions
+### 6.5 Fonts, layout and themes for long sessions
 
 | Item | Default |
 |---|---|
@@ -475,7 +447,6 @@ The key count looks similar, but the cost is very different. The old workflow us
 ## 8. Open questions for the user
 
 1. **Do you use vim keys anywhere today?** If not, the `arrows` layout may be the better default, and the help page must teach `j` / `k`.
-2. **Which hand or fingers hurt?** If only the mouse hand hurts, the current split is fine. If both hands hurt, a foot pedal, a one-hand layout, or voice-first input moves up in priority.
+2. **Which hand or fingers hurt?** If only the mouse hand hurts, the current split is fine. If both hands hurt, a foot pedal or a one-hand layout moves up in priority.
 3. **What PDFs do you read most?** Two-column papers, textbooks with math, or scanned books? Math and scans need region-image questions and OCR, which change the selection design.
 4. **Do you want answers next to the PDF, or the PDF at full width with answers in an overlay?** What is your screen size? This sets the default layout.
-5. **Is cloud speech recognition acceptable to you, and do you want voice for questions only, or also for commands?** This decides between the Web Speech API and local Whisper, and if a voice-command layer is worth the work.

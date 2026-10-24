@@ -1,0 +1,92 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`context builder > builds turn 1 in the layer order of DESIGN.md 6.3 1`] = `
+"<document>
+title: Learning with Kernels
+authors: B. Schölkopf
+contents:
+1. 1 Introduction
+2. 2 Kernels
+3. 3 Risk
+4. 4 Regularization
+</document>
+<reader>
+I am a software engineer.
+</reader>
+<previous_page>
+Text of the page before.
+</previous_page>
+<surrounding_text pages="37">
+Earlier text about feature maps.
+
+The map is costly. ⟦The kernel trick replaces the explicit map.⟧ It uses inner products.
+
+Next paragraph.
+</surrounding_text>
+<request>
+location: 2 Kernels > 2.2 The trick — page 37 (PDF page 52)
+selected passage:
+"""
+The kernel trick replaces the explicit map.
+"""
+Task: Explain the selected passage.
+- Say what it means in plain terms, then why the author says it at this point in the chapter.
+- Name the specific referent of every back-reference in the passage.
+- If the passage depends on an earlier definition or result, name it and give its page if the context gives one.
+Length: at most 150 words. If the passage is a multi-step argument, at most 250 words.
+</request>"
+`;
+
+exports[`context builder > resends turn 1 byte for byte in a follow-up 1`] = `
+[
+  {
+    "content": "<document>
+title: Learning with Kernels
+authors: B. Schölkopf
+contents:
+1. 1 Introduction
+2. 2 Kernels
+3. 3 Risk
+4. 4 Regularization
+</document>
+<reader>
+I am a software engineer.
+</reader>
+<previous_page>
+Text of the page before.
+</previous_page>
+<surrounding_text pages="37">
+Earlier text about feature maps.
+
+The map is costly. ⟦The kernel trick replaces the explicit map.⟧ It uses inner products.
+
+Next paragraph.
+</surrounding_text>
+<request>
+location: 2 Kernels > 2.2 The trick — page 37 (PDF page 52)
+selected passage:
+"""
+The kernel trick replaces the explicit map.
+"""
+Task: Explain the selected passage.
+- Say what it means in plain terms, then why the author says it at this point in the chapter.
+- Name the specific referent of every back-reference in the passage.
+- If the passage depends on an earlier definition or result, name it and give its page if the context gives one.
+Length: at most 150 words. If the passage is a multi-step argument, at most 250 words.
+</request>",
+    "role": "user",
+  },
+  {
+    "content": "It avoids the map.",
+    "role": "assistant",
+  },
+  {
+    "content": "Follow-up on the same passage (page 37):
+<question>
+And the cost?
+</question>
+Length: at most 150 words, unless the question needs more.",
+    "role": "user",
+  },
+]
+`;

@@ -1,6 +1,6 @@
 # llm-reader: design
 
-**Status:** draft v0.3, 2026-10-23. Nothing is built yet. v0.2 added the running-cost estimate (section 6.7). v0.3 applies the user's answers to the open questions: a left-hand keymap, local files first, local speech input, and a local-model option (sections 5.7, 6.8, 13).
+**Status:** draft v0.4, 2026-10-23. Nothing is built yet. v0.2 added the running-cost estimate (section 6.7). v0.3 applied the user's answers to the open questions: a left-hand keymap, local files first, and a local-model option (sections 5.7, 6.8, 13). v0.4 removes voice input and read-aloud at the user's request.
 **Audience:** the author of the tool, and anyone who builds on it later.
 **Detail:** this file is the authoritative design. The three research appendices under
 [docs/design/](docs/design/) hold the full detail. Where an appendix differs from this file, this file wins.
@@ -17,7 +17,7 @@ The design rests on three decisions:
 2. **The passage is the prompt.** A selection in the PDF becomes the staged passage at once. The app adds the book title, the chapter, the surrounding paragraphs, a running summary, the book's own definitions, and the user's past questions. This makes the answers better, not only cheaper to get.
 3. **Answers become marginalia.** Each question is a thread anchored to a passage. The anchors persist across sessions, show in the page margin, and export to Markdown.
 
-The plan has three phases. Phase 0 is a weekend build that already removes the copy-paste and the focus-switch pain. Phase 1 adds the context engine and the notes. Phase 2 adds voice, figures, and learning features.
+The plan has three phases. Phase 0 is a weekend build that already removes the copy-paste and the focus-switch pain. Phase 1 adds the context engine and the notes. Phase 2 adds figures, OCR, and learning features.
 
 The user's Claude Max 5x plan includes $100 of Claude API credit per month. On Opus 5.5 that credit covers roughly 400 reading hours a month, so the tool is close to free to run (section 6.7).
 
@@ -107,7 +107,7 @@ Non-goals for v1:
 2. A sentence is confusing. `s` moves the cursor onto it. `d` adds the next sentence if needed.
 3. `Enter` sends "explain this". The app builds the context in under 50 ms and streams the answer into the pane. Focus stays in the PDF.
 4. The user reads the answer. For a long answer, `Tab` moves into the pane and `Space` scrolls it. `Esc` returns.
-5. `x` asks for an example in the same thread. `v` opens the ask box. The user speaks the question, or types it.
+5. `x` asks for an example in the same thread. `v` opens the ask box for a typed question.
 6. `Space` continues reading. The cursor is where the user left it.
 
 ### 4.3 A 60-second session
@@ -123,8 +123,8 @@ The user reads page 42 of a two-column physics textbook.
 | 23 s | `Enter` | Explain. The status line shows "◌ explain… 1 s". A ring pulses in the gutter. |
 | 25 s | | The answer streams into the pane, first line at the top. The user reads it with no key. |
 | 33 s | `Tab` `Space` | The answer is long. Focus moves to the pane and scrolls one screen. |
-| 40 s | `v` | The ask box opens with the microphone on. Its header says "Follow-up in thread #7". |
-| 41 s | (speaks) | "why is the temperature fixed but not the energy". Local speech-to-text puts the text in the box. |
+| 40 s | `v` | The ask box opens. Its header says "Follow-up in thread #7". |
+| 41 s | (types) | "why is the temperature fixed but not the energy" |
 | 47 s | `Enter` | The follow-up streams below the first answer. The box closes. Focus returns to the PDF. |
 | 55 s | `Esc` | The pane loses focus. The cursor is still on the sentence. |
 | 57 s | `Space` | The bar moves to the next paragraph. The user reads on. |
@@ -137,7 +137,7 @@ The user reads page 42 of a two-column physics textbook.
 | Re-find the reading position | Yes | No |
 | Context sent to the model | The pasted text | The passage plus the book context |
 
-Without the follow-up, the question costs three keys: `s` `s` `Enter`. Every key in the session is under the left hand or the thumb.
+Without the follow-up, the question costs three keys: `s` `s` `Enter`. Apart from the typed question, every key in the session is under the left hand or the thumb.
 
 ---
 
@@ -178,7 +178,9 @@ The selection extends without a chord. `d` adds the next sentence. `a` removes t
 
 **C. Search to select (Phase 1).** `/` opens a one-line input. The search is incremental and uses normalized text. `Enter` selects the sentence that contains the match. The matched words stay stored as the **focus term**. The Define preset uses the focus term when one exists, so `/entropy` `Enter` `c` defines the one word.
 
-**D. Mouse selection (Phase 0).** Any mouse selection becomes the staged passage at once. The user never copies or pastes. A double-click on a word stages the word as the focus term. A small floating toolbar with the preset names appears for mouse-only use. After a mouse selection, the reading cursor moves to the first selected sentence, so keyboard and mouse stay consistent.
+**D. Mouse selection (Phase 0).** Any mouse selection becomes the staged passage at once. The user never copies or pastes. A double-click on a word stages the word as the focus term. A small floating toolbar with the preset names appears for mouse-only use. After a mouse selection, the reading cursor moves to the first selected sentence, so keyboard and mouse stay consistent. A plain click selects the sentence under the pointer, and a triple-click selects its paragraph.
+
+**E. Point and key (Phase 0).** After the pointer moves over the PDF, the next `s` or `w` selects the sentence under the pointer, `Space` or `q` selects its paragraph, and `d` extends the selection to it. The user moves the mouse but does not click, which spares the clicking hand. Any other cursor key resets the aim, and a move under 12 px does not count, so a bumped mouse does not move the cursor. This is the fast way to jump to a far place on the screen; hint mode (B) is the keyboard-only way.
 
 | Mechanism | Keys to a nearby target | Keys to a far target on screen | Tracks the reading position | Phase |
 |---|---|---|---|---|
@@ -200,13 +202,13 @@ The selection extends without a chord. `d` adds the next sentence. `a` removes t
 | `READER` | Answer pane or reader overlay | Scroll the answer, ask a follow-up. |
 | `PALETTE` | Command palette | Type a command name. |
 
-**Presets.** A preset is one key that sends the staged passage with a fixed intent. The movement keys and the frequent preset keys are all under the left hand, because the user's right hand is the one that hurts. The right hand rests. It types only when a question needs typing, and local speech input makes even that optional.
+**Presets.** A preset is one key that sends the staged passage with a fixed intent. The movement keys and the frequent preset keys are all under the left hand, because the user's right hand is the one that hurts. The right hand rests. It joins in only when the user types a free-text question.
 
 | Key | Preset | Intent | Target length | Phase |
 |---|---|---|---|---|
 | `Enter` or `e` | Explain | What it means, why the author says it here, what "this" refers to. | ≤150 words | 0 |
 | `c` | Define | Define the terms, or only the focus term. Cite the book's own definition. | ≤5 terms × 40 words | 0 |
-| `v` | Ask | Open the ask box. Speak the question, or type it. | ≤200 words | 0 |
+| `v` | Ask | Open the ask box for a typed question. | ≤200 words | 0 |
 | `z` | Simplify | The same claims in plain words. | ≤ the original | 1 |
 | `x` | Example | One concrete example, mapped back to the passage. | ≤200 words | 1 |
 | `b` | Why / Connect | Purpose, what it depends on, what it sets up. | ≤200 words | 1 |
@@ -214,11 +216,11 @@ The selection extends without a chord. `d` adds the next sentence. `a` removes t
 | `t` | Translate | Into the language in the settings. | ≈ the source | 1 |
 | none | Check me, Critique, Steps, Quiz | The user restates the passage and the model grades it. Steelman and critique. Restate as steps. Three questions on the page. Run from the palette, or bind a key in the keymap file. | see appendix | 1 |
 
-The letters are mnemonic where the left hand allows: `e` explain, `c` clarify the terms, `v` voice, `x` example, `b` because, `g` gist, `t` translate. `z` for Simplify has no mnemonic; it is the free key under the left ring finger. The number row `1` to `5` is free for user presets.
+The letters are mnemonic where the left hand allows: `e` explain, `c` clarify the terms, `x` example, `b` because, `g` gist, `t` translate. `v` for Ask and `z` for Simplify have no mnemonic; they are the free keys under the left hand. The number row `1` to `5` is free for user presets.
 
 `Enter` is the default preset because a paste into a chat UI with no question meant "explain this". The old habit maps to one key.
 
-**The ask box.** `v` opens a one-line box that grows to five lines. When voice input is on, the microphone starts at once and the recognized text appears in the box. The user can edit it before `Enter`, or let "send on silence" send it. It appears just below the passage, or above it when the passage is near the bottom. The header shows the first 80 characters of the staged text and the target: "New question" or "Follow-up in thread #4". `Enter` sends. Shift+`Enter` adds a line. `Tab` toggles between new thread and follow-up. `Esc` cancels. On send or cancel, focus returns to the PDF, and the cursor does not move.
+**The ask box.** `v` opens a one-line box that grows to five lines. It appears just below the passage, or above it when the passage is near the bottom. The header shows the first 80 characters of the staged text and the target: "New question" or "Follow-up in thread #4". `Enter` sends. Shift+`Enter` adds a line. `Tab` toggles between new thread and follow-up. `Esc` cancels. On send or cancel, focus returns to the PDF, and the cursor does not move.
 
 **Follow-ups.** The rule is simple and visible:
 
@@ -255,7 +257,7 @@ The `left` layout, the default. Every frequent action sits under the left hand. 
 | `\` | Show or hide the answer pane. | NORMAL |
 | `Enter`, `e` | Explain. | NORMAL, READER |
 | `c` | Define the terms. | NORMAL, READER |
-| `v` | Ask: open the ask box, with the microphone on when voice is enabled. | NORMAL, READER |
+| `v` | Ask: open the ask box for a typed question. | NORMAL, READER |
 | `x`, `z`, `b`, `g`, `t` | Example, Simplify, Why, Gist, Translate (section 5.3). | NORMAL, READER |
 | `.` | Repeat the last preset on the current selection. | NORMAL |
 | `r` | Regenerate the last answer. | NORMAL, READER |
@@ -271,7 +273,6 @@ Keys in `READER` mode only:
 | `Space` / `q` | Scroll the answer by one screen. |
 | `]` / `[` | Next / previous message in the thread. |
 | `y` | Append the thread to the user's notes file as Markdown. Copies to the clipboard when no notes file is set. |
-| `,` | Read the answer aloud, or stop (Phase 2). |
 | `` ` `` | Switch between the pane and the full reader overlay. |
 | `Esc` or `Tab` | Return to the PDF at the reading position. |
 
@@ -326,7 +327,7 @@ A long answer is read without the mouse in two ways. `Tab` then `Space` scrolls 
 | Next / previous sentence | `s` / `w` | `j` / `k` |
 | Extend / shrink | `d` / `a` | `l` / `h` |
 | Define | `c` | `d` |
-| Ask | `v` | `a` (typed), `v` (voice) |
+| Ask | `v` | `a` |
 | Simplify | `z` | `s` |
 | Why / Connect | `b` | `w` |
 | Check me | palette | `q` |
@@ -351,10 +352,6 @@ key    = "1"
 label  = "Walk through the proof"
 intent = "Walk through this argument one step at a time."
 ```
-
-**Voice input (Phase 1).** Cloud speech recognition is not acceptable to the user, so all speech stays on the machine. The Web Speech API is out, because Chrome sends the audio to Google. The browser captures the microphone with `getUserMedia` and streams short audio chunks to the local server. The server runs whisper.cpp on the GPU and returns the text. `v` opens the ask box with the microphone on. The microphone stops after 1.5 s of silence, or on `v` or `Enter`. The user does not hold a key, because a held key is a static load on the finger. The text appears in the box, and the user can edit it before `Enter`. A setting "send on silence" removes the `Enter`. The server passes the terms of the current page to the recognizer as a prompt hint, which helps with technical words. Voice is Phase 1 because typed questions are the last typing in the flow, and typing uses the right hand.
-
-**Read-aloud (Phase 2).** `,` in `READER` mode reads the answer with the browser `speechSynthesis` API. On Linux this uses the local speech-dispatcher voices, so no audio leaves the machine. The voices are plain. A local Piper voice is the later upgrade. The current sentence is highlighted while it plays.
 
 **Layout and theme defaults.**
 
@@ -731,10 +728,6 @@ api_key_env = "ANTHROPIC_API_KEY"
 [storage]
 books_dir = "~/books"       # the library list scans this directory
 
-[speech]
-engine = "whisper.cpp"      # local only; the config has no cloud engine
-model  = "~/.local/share/llm-reader/models/ggml-large-v3-turbo.bin"
-
 [notes]
 file = "~/notes/reading.md" # the y key appends a Q&A block here
 
@@ -792,7 +785,7 @@ The offsets are the fast path. The quote selector, in the style of the W3C Web A
 | Storage | `better-sqlite3`, or `node:sqlite` on recent Node | Synchronous, fast, prebuilt. |
 | Key dispatch | One capture-phase `keydown` listener on `window` | It maps key plus mode to a command id and calls `preventDefault` for owned keys. |
 
-The machine is an NVIDIA DGX Spark, so the platform is Linux on arm64. Node, `pdfjs-dist`, and `better-sqlite3` have arm64 builds, and `node:sqlite` needs no native module at all. whisper.cpp builds with CUDA on the Spark. Test the native pieces on the first day.
+The machine is an NVIDIA DGX Spark, so the platform is Linux on arm64. Node, `pdfjs-dist`, and `better-sqlite3` have arm64 builds, and `node:sqlite` needs no native module at all. Test the native pieces on the first day.
 
 If the user prefers Python, the design still works: keep all segmentation in the browser and upload each page text to the server. Background whole-document extraction then waits until each page is viewed.
 
@@ -829,7 +822,6 @@ llm-reader/
 │   │   ├── fetch/           URL fetch, rewrites, sniffing, Range serving
 │   │   ├── context/         layer builder, budget and trimming, prompt templates
 │   │   ├── jobs/            background queue: summaries, glossary, index lines
-│   │   ├── speech/          whisper.cpp wrapper: audio chunks in, text out
 │   │   ├── runs.ts          RunManager: abort, retries, event buffer, persistence
 │   │   ├── extract/         whole-document segmentation in Node, doc profile, OCR job
 │   │   ├── library.ts       scan books_dir, recent documents, fuzzy match
@@ -866,8 +858,6 @@ llm-reader/
 | Check me (palette) | The user restates the passage. The model grades it: correct, mostly, partly, incorrect, with the specific gap. Recall beats rereading. | 1 |
 | Reader overlay (`` ` ``) | A centered, wide, large-font view for long answers. The default when the pane is hidden. | 1 |
 | Figure and equation ask | Select a region. The crop goes to a vision-capable model with the normal context. The only way to ask about math that extraction garbles. | 2 |
-| Voice question (`v`) | Local speech-to-text on the GPU with whisper.cpp. Typed questions are the last typing in the flow, and typing uses the right hand. | 1 |
-| Read-aloud (`,`) | Keep the eyes on the PDF while the answer plays. | 2 |
 | Teach-back per section | At a section end, explain it in 3 to 5 sentences. The model grades against the section text. Opt-in, never automatic. | 2 |
 | Pre-read briefing | On entering a chapter, on demand: what it establishes, which earlier ideas it needs, three questions to keep in mind. | 2 |
 | Confusion heatmap | A strip next to the scroller shows asks per page. Shows which pages were hard before a reread. No LLM call. | 2 |
@@ -909,20 +899,19 @@ Do not start a phase before the previous one is in real daily use for at least a
 - The first token arrives in under 2 s at the median.
 - The threads are still there after a restart.
 
-### Phase 1: the context engine, voice, and the local model (weeks 2 to 3)
+### Phase 1: the context engine and the local model (weeks 2 to 3)
 
-**Capability.** Answers know the chapter, the book's definitions, and the user's earlier questions. All presets work, also as follow-ups. A spoken question goes into the ask box with no network call. Background jobs run on the local model. Hint mode and search select far targets. Anchors show in the margin and navigate with `]` `[`. One key appends a thread to the user's notes file.
+**Capability.** Answers know the chapter, the book's definitions, and the user's earlier questions. All presets work, also as follow-ups. Background jobs run on the local model. Hint mode and search select far targets. Anchors show in the margin and navigate with `]` `[`. One key appends a thread to the user's notes file.
 
 **Pieces.**
 
 1. Hint mode, search to select, the focus term, `.` repeat, `m` mark.
 2. The remaining presets and the palette-only presets. Presets as follow-ups.
-3. Local speech input: microphone capture in the browser, whisper.cpp on the server, the voice path in the ask box, the page-terms prompt hint, "send on silence".
-4. The `openai-compatible` driver and the local model as the fast role. The two roles, cache breakpoints, the cached-token readout. The per-role usefulness rating for the comparison in section 6.8.
-5. The background job queue with the dwell filter. D1 and D2 summaries, the glossary, the Define cache, index lines, E2 to E4, trimming, FTS5 for related threads.
-6. Running-header outline fallback. Whole-document extraction in Node. URL fetch with sniffing and the cache, for the occasional online PDF.
-7. Margin tags, inline cards, scrollbar ticks, the reader overlay, the hidden-pane layout.
-8. Markdown export, the append-to-notes key, the keymap file, and the `home` layout.
+3. The `openai-compatible` driver and the local model as the fast role. The two roles, cache breakpoints, the cached-token readout. The per-role usefulness rating for the comparison in section 6.8.
+4. The background job queue with the dwell filter. D1 and D2 summaries, the glossary, the Define cache, index lines, E2 to E4, trimming, FTS5 for related threads.
+5. Running-header outline fallback. Whole-document extraction in Node. URL fetch with sniffing and the cache, for the occasional online PDF.
+6. Margin tags, inline cards, scrollbar ticks, the reader overlay, the hidden-pane layout.
+7. Markdown export, the append-to-notes key, the keymap file, and the `home` layout.
 
 **Done when:**
 
@@ -930,14 +919,13 @@ Do not start a phase before the previous one is in real daily use for at least a
 - An ask that says "like on page 42" includes the thread from page 42, as the context-used line shows.
 - A single-word Define on a term the book defined earlier cites the book's definition and page.
 - The usage readout shows cached input tokens on the second and later asks in a chapter.
-- A spoken question of ten words appears in the ask box within 2 s after the user stops speaking, with no network call.
 - The export opens in a Markdown editor with correct chapter headings and page references.
 
 ### Phase 2: hard content and learning
 
-**Capability.** Region asks for figures and equations. OCR for scans. Read-aloud. Teach-back, pre-read briefing, heatmap, Deep ask, the session recap, and the resume briefing. The browser extension only if online PDFs behind a login become common.
+**Capability.** Region asks for figures and equations. OCR for scans. Teach-back, pre-read briefing, heatmap, Deep ask, the session recap, and the resume briefing. The browser extension only if online PDFs behind a login become common.
 
-**Pieces.** Region capture and a vision-capable role. `ocrmypdf` job. `speechSynthesis` read-aloud, Piper later. The teach-back and briefing templates. The heatmap from the thread table. The recap and briefing jobs. The MV3 extension and the `BrowserTransport`, if needed.
+**Pieces.** Region capture and a vision-capable role. `ocrmypdf` job. The teach-back and briefing templates. The heatmap from the thread table. The recap and briefing jobs. The MV3 extension and the `BrowserTransport`, if needed.
 
 **Done when:**
 
@@ -979,8 +967,7 @@ Do not start a phase before the previous one is in real daily use for at least a
 | Loss of notes | Months of notes disappear. | SQLite on disk in WAL mode, outside the browser. Flush every 500 ms. Markdown export on demand. A daily copy of the database, keep 14. |
 | PDFs behind a login | Rare for this user. | Save the file in the browser into `books_dir`. The extension stays an option. |
 | Local model latency | The first token on a 6,000-token prompt takes a few seconds on the Spark. | Prefix caching in the local server. The local model runs the fast role by default. The strong role stays on the API unless the user chooses private mode. |
-| arm64 native modules | A prebuilt binary for `better-sqlite3` or whisper.cpp is missing or broken. | Test on the first day. `node:sqlite` needs no native module. whisper.cpp builds from source with CUDA. |
-| Local speech accuracy on technical terms | A wrong word in the question misleads the answer. | Pass the page's terms as a prompt hint. Show the text before send. The user edits with one key. |
+| arm64 native modules | A prebuilt binary for `better-sqlite3` is missing or broken. | Verified on 2026-10-23: better-sqlite3 13 ships a linux-arm64 prebuild and loads. `node:sqlite` is the fallback and needs no native module. |
 | Provider API differences | A compatible server rejects a field or streams a different shape. | Two thin drivers. A per-profile passthrough field. Usage is optional. Driver tests against recorded streams. |
 | Context that misleads | Irrelevant layers dilute attention and raise cost. | A budget per layer and a trim order. The context-used line makes bad answers debuggable. |
 
@@ -1019,7 +1006,7 @@ The user answered the first seven questions on 2026-10-23. The answers and the r
 | PDF sources | Mostly local files | File open first. URL fetch is Phase 1. Login fallbacks and the extension are later, if ever. |
 | PDF kind | Single-column books | Column handling stays in the segmenter, but two-column fixtures move to later. Running headers, the page-label map, and chapter detection matter most. The region ask stays Phase 2. |
 | Vim keys | Not used, willing to learn simple keys | The `left` layout is the default: WASD movement and ten core keys. The `home` layout is optional. |
-| Hands and speech | The right hand hurts from clicking. Cloud speech is not acceptable. | The whole core loop runs on the left hand. Local speech input with whisper.cpp moves to Phase 1. The Web Speech API is removed. |
+| Hands | The right hand hurts from clicking. | The whole core loop runs on the left hand. The design has no voice input and no read-aloud, at the user's request. |
 | Notes | The user keeps their own Markdown notes file | No notes system in the app. One key appends a Q&A block to the user's file. Export stays as a safety valve. The recap and the resume briefing move to Phase 2. |
 
 Still open:
@@ -1036,7 +1023,7 @@ Still open:
 
 The full research behind this design, one file per area:
 
-- [docs/design/interaction.md](docs/design/interaction.md): selection mechanisms, modes, the full keymap and keymap file, focus, answer placement, ergonomics, voice, the worked walkthrough.
+- [docs/design/interaction.md](docs/design/interaction.md): selection mechanisms, modes, the full keymap and keymap file, focus, answer placement, ergonomics, the worked walkthrough.
 - [docs/design/architecture.md](docs/design/architecture.md): form-factor decision table, the segmentation pipeline step by step, the char map, fetch flow, SSE event shapes, the adapter and both drivers, the full data model and tables, config, stack comparison, security, repository layout, risks.
 - [docs/design/context-and-plan.md](docs/design/context-and-plan.md): the context layers and trimming algorithm, every prompt template, the running-summary and glossary prompts, the threading model, precomputation jobs, latency and cost tactics, features, phases, alternatives, metrics.
 

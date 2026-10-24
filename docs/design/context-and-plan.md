@@ -582,7 +582,7 @@ The strong-model input dominates. Caching and the 6,000-token budget are therefo
 
 **Export as a study Markdown file (Phase 1).** One action writes `<book-title>.md`: one heading per chapter, and for each thread the quoted passage, the page, the question, the answer, and the follow-ups. Recaps go at the end of each chapter. The file works in Obsidian or in any Markdown editor. The export protects the user's notes if the app stops working. It is approximately 50 lines of code.
 
-**Teach-back mode (Phase 2).** At the end of a section, the user triggers teach-back. The app asks: "Explain section 7.3 in your own words, in 3 to 5 sentences." The user types or dictates the answer. The model grades it with the Check template, with the section text as the reference. Teach-back is the most effective learning feature in this list, because recall is stronger than rereading. It is opt-in and never automatic.
+**Teach-back mode (Phase 2).** At the end of a section, the user triggers teach-back. The app asks: "Explain section 7.3 in your own words, in 3 to 5 sentences." The user types the answer. The model grades it with the Check template, with the section text as the reference. Teach-back is the most effective learning feature in this list, because recall is stronger than rereading. It is opt-in and never automatic.
 
 **Confusion heatmap (Phase 2).** A thin bar next to the page scroller shows the number of asks per page as a color strip. Before a review or a reread, the user sees at once which pages were hard. The data already exists in the thread table. The feature needs no LLM call.
 
@@ -595,8 +595,6 @@ Write a pre-read briefing for the chapter below, for this reader.
 3. Keep in mind: 3 questions that the chapter answers.
 Do not reveal conclusions that the chapter builds up to as a surprise. Do not add outside knowledge.
 ```
-
-**Voice question (Phase 2, priority depends on open question 6).** The user holds a key and speaks the free-ask question or the Check restatement. A speech-to-text step converts it to text. The user has hand pain, and typed questions are the last remaining source of typing in the flow. This feature removes it.
 
 **Figure and equation ask (Phase 2, depends on open question 4).** The user selects a rectangular region of the page. The app sends the region as an image to a vision-capable model, together with the normal context layers. PDF text extraction loses figures and often garbles equations. For math-heavy books, this is the only way to ask about them.
 
@@ -665,22 +663,21 @@ Do not reveal conclusions that the chapter builds up to as a surprise. Do not ad
 
 ### Phase 2: learning features and hard content (after Phase 1 is in daily use)
 
-**User-visible capability.** Teach-back, pre-read briefings, the confusion heatmap, questions about figures and equations, spoken questions, and the Deep ask. Optional: the stuck detector and flashcard export.
+**User-visible capability.** Teach-back, pre-read briefings, the confusion heatmap, questions about figures and equations, and the Deep ask. Optional: the stuck detector and flashcard export.
 
 **Main technical pieces:**
 
 1. Region capture to image, and a vision-capable model role.
-2. Speech-to-text for the question field (a local model, or a provider endpoint).
-3. Deep ask and the optional `chapter_mode: auto` with the full chapter as a cached prefix.
-4. The heatmap from the thread table.
-5. Teach-back and briefing templates. The contents-page outline fallback.
-6. Optional: the `get_thread` tool, if the logs show that deterministic retrieval misses references.
+2. Deep ask and the optional `chapter_mode: auto` with the full chapter as a cached prefix.
+3. The heatmap from the thread table.
+4. Teach-back and briefing templates. The contents-page outline fallback.
+5. Optional: the `get_thread` tool, if the logs show that deterministic retrieval misses references.
 
 **Definition of done:**
 
 - The user asks about an equation or a figure and gets an answer that names its parts correctly.
 - The user completes one teach-back per chapter for a full book without friction.
-- The user's measured time with the hand on the mouse per session is near zero, including the questions (voice).
+- The user's measured time with the hand on the mouse per session is near zero, including the questions.
 
 Order rule for all phases: do not start a phase before the previous phase is in real daily use for at least a week. The logs of real use decide the priorities inside the next phase.
 
@@ -732,4 +729,3 @@ Review the metrics after the first two weeks. If the implicit usefulness is poor
 3. **Where do your PDFs come from?** Local files, public URLs, or sites behind a login (for example a library proxy or a subscription book site)? PDFs behind a login can change the architecture from a standalone app to a browser extension.
 4. **What do you read most: books in a single column, or academic papers in two columns? Are the PDFs scanned? Do math and figures matter?** Two columns affect paragraph segmentation. Scanned PDFs need OCR. Math and figures move the vision feature from Phase 2 to Phase 1.
 5. **Where do your notes go today?** For example an Obsidian vault, a folder of Markdown files, Anki, or nowhere. The answer decides the export format and the priority of the export.
-6. **Would voice input for typed questions help your hands?** If yes, the voice question moves from Phase 2 to Phase 1, because typed questions are then the largest remaining strain.
