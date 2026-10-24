@@ -1,5 +1,5 @@
 import { mode } from '../commands/modes.ts';
-import { activeRun, notice, runSeconds, staged, stagedTarget, usage } from './session.ts';
+import { activeRun, helpOpen, notice, runSeconds, staged, stagedTarget, usage } from './session.ts';
 import { PRESET_LABEL, stagedSummary, targetLabel } from './target.ts';
 
 function formatTokens(n: number): string {
@@ -33,6 +33,28 @@ function liveText(): string {
   return [state, notice.value ?? ''].join(' ').trim();
 }
 
+/** Keep keyboard focus where it is when a toolbar button is clicked, so the next key still goes to the PDF. */
+export const keepFocus = (ev: MouseEvent): void => ev.preventDefault();
+
+/** The help icon: it opens and closes the key card, as `?` does. */
+function HelpButton() {
+  const open = helpOpen.value;
+  return (
+    <button
+      type="button"
+      class={`help-button${open ? ' active' : ''}`}
+      title="Keyboard shortcuts (?)"
+      aria-label="Keyboard shortcuts"
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      onMouseDown={keepFocus}
+      onClick={() => (helpOpen.value = !open)}
+    >
+      ?
+    </button>
+  );
+}
+
 export function StatusLine() {
   const s = staged.value;
   const u = usage.value?.session;
@@ -62,6 +84,7 @@ export function StatusLine() {
           {u.costUsd != null ? ` · $${u.costUsd.toFixed(3)}` : ''}
         </span>
       )}
+      <HelpButton />
       <span class="visually-hidden" aria-live="polite">
         {liveText()}
       </span>

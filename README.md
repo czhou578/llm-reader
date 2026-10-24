@@ -40,7 +40,7 @@ For a production-style run without Vite: `pnpm build && pnpm start`, then open h
 | `Esc` | Close the help, stop a streaming answer, or return to the PDF |
 | `r` / `.` | Regenerate the last answer / repeat the last preset |
 | `'` | Jump back to the reading position |
-| `?` / `:` | Key help / command prompt (`open`, `page <n>`, `layout home`) |
+| `?` / `:` | Key help / command prompt (`open`, `page <n>`, `layout home`). The round `?` icon at the bottom right of the status line also opens the key help. |
 
 A mouse selection in the PDF is staged at once. An ask on the same selection is a follow-up in the same thread.
 Threads and the reading position persist across restarts.

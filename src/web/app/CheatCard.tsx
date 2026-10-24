@@ -2,6 +2,7 @@ import { bindingsFor, LAYOUTS, keyLabel } from '../commands/keymap.ts';
 import { COMMAND_LABELS, CORE_COMMANDS } from '../commands/labels.ts';
 import type { Mode } from '../commands/modes.ts';
 import { helpOpen, layoutName } from './session.ts';
+import { keepFocus } from './StatusLine.tsx';
 
 /** The keys of a mode, grouped by command id: Map("ask.preset:explain" → "Enter, e"). */
 function keysByCommand(m: Mode): Map<string, string> {
@@ -44,6 +45,9 @@ export function CheatCard() {
       <header>
         <h2>Keys · {layoutName.value} layout</h2>
         <span class="muted">? or Esc closes · type :layout home for the vim-style layout</span>
+        <button type="button" class="cheat-close" aria-label="Close" title="Close (Esc)" onMouseDown={keepFocus} onClick={() => (helpOpen.value = false)}>
+          ×
+        </button>
       </header>
       <div class="cheat-columns">
         <KeyTable title="The core loop" keys={normal} ids={core} />

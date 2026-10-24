@@ -120,6 +120,26 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
 .run-error { color: var(--error); }
 .run-cancelled { color: var(--fg-muted); }
 .usage-total { flex: none; color: var(--fg-muted); }
+.help-button,
+.cheat-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: var(--bg-pane);
+  color: var(--fg-muted);
+  cursor: pointer;
+  font: 600 13px/1 var(--font-mono);
+}
+.help-button { width: 22px; height: 22px; border-radius: 50%; }
+.cheat-close { width: 26px; height: 26px; border-radius: 6px; font-size: 18px; margin-left: auto; }
+.help-button:hover,
+.cheat-close:hover,
+.help-button.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.help-button:focus-visible,
+.cheat-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .hint-strip {
   display: flex;
   gap: 1.1rem;
@@ -296,7 +316,9 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
   box-shadow: var(--shadow);
   font-size: 13px;
 }
-.cheat-card header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.cheat-card header { display: flex; align-items: baseline; gap: 1rem; }
+.cheat-card header .muted { margin-left: auto; }
+.cheat-card header .cheat-close { margin-left: 0; align-self: center; }
 .cheat-card h2 { margin: 0 0 0.5rem; font-size: 16px; }
 .cheat-card h3 { margin: 0.5rem 0 0.3rem; font-size: 13px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .cheat-mouse { margin: 0.75rem 0 0; font-size: 13px; }
