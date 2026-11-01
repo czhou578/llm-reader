@@ -2,7 +2,7 @@
 import './styles/app.css';
 import { h, render } from 'preact';
 import * as api from './api/client.ts';
-import { App } from './app/App.tsx';
+import { App, loadReader } from './app/App.tsx';
 import { registerCommands } from './app/commands.ts';
 import { countSession } from './app/hints.ts';
 import { route } from './app/router.ts';
@@ -27,6 +27,10 @@ async function boot(): Promise<void> {
     return;
   }
   await route();
+  // Load the reader while the library is on screen, so the first open does not wait for pdf.js.
+  const warm = () => void loadReader().catch(() => undefined); // an open shows the error
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 2000 });
+  else setTimeout(warm, 500);
 }
 
 void boot();

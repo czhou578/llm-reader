@@ -1,8 +1,44 @@
+import { signal } from '@preact/signals';
 import { useEffect, useState } from 'preact/hooks';
 import { Library } from '../library/Library.tsx';
 import { isPdf, openFile } from '../library/upload.ts';
-import { ReaderView } from './ReaderView.tsx';
 import { bootError, view } from './session.ts';
+
+type ReaderModule = typeof import('./ReaderView.tsx');
+
+const reader = signal<ReaderModule | null>(null);
+let loading: Promise<ReaderModule> | null = null;
+
+/**
+ * Load the reader chunk once. It holds pdf.js, KaTeX, markdown-it, and the answer pane, which the library does not
+ * need, so they stay out of the main bundle. The load also starts the pdf.js worker.
+ */
+export function loadReader(): Promise<ReaderModule> {
+  loading ??= Promise.all([import('./ReaderView.tsx'), import('../viewer/index.ts')]).then(
+    ([m, viewer]) => {
+      viewer.warmViewer();
+      reader.value = m;
+      return m;
+    },
+    (err: unknown) => {
+      loading = null; // the next try loads again
+      throw err;
+    },
+  );
+  return loading;
+}
+
+function Reader() {
+  const m = reader.value;
+  useEffect(() => {
+    if (m) return;
+    loadReader().catch((err: unknown) => {
+      bootError.value = `Cannot load the reader: ${err instanceof Error ? err.message : String(err)}`;
+      view.value = 'error';
+    });
+  }, [m]);
+  return m ? <m.ReaderView /> : <div class="boot muted">Loading…</div>;
+}
 
 function hasFiles(ev: DragEvent): boolean {
   return !!ev.dataTransfer && [...ev.dataTransfer.types].includes('Files');
@@ -62,7 +98,7 @@ export function App() {
         </main>
       )}
       {view.value === 'library' && <Library />}
-      {view.value === 'reader' && <ReaderView />}
+      {view.value === 'reader' && <Reader />}
       {dropping && <div class="drop-overlay">Drop a PDF to open it</div>}
     </>
   );
