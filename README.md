@@ -111,6 +111,10 @@ pnpm build
 
 ## Documentation
 
+- The [architecture page](https://claude.ai/artifact/CG1BwTiSaLT4uybPRgLEE8) is a Claude artifact: one web page with
+  diagrams of how the app is built. It shows the processes, one ask from the key press to the answer, what the model
+  sees, the path from PDF text to a staged passage, the input modes, the database tables, and a module index with line
+  counts. It describes version 0.1.0.
 - [DESIGN.md](DESIGN.md) is the design: the problem, the interaction model, the context strategy, and the plan.
   Phase 0 of that plan is what this repository builds. The later phases are plans, not the current program.
 - [docs/design/](docs/design/) holds the three research appendices behind the design: interaction, context and
