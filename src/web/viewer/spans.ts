@@ -1,4 +1,4 @@
-// Pair PDF.js text items with text-layer spans. Pure logic; no DOM.
+// Pair PDF.js text items with text-layer spans, and drop the span maps of removed layers. Pure logic; no DOM.
 
 /**
  * Pair text items with text-layer spans by their text, in order. PDF.js makes one span per non-empty item, but a span
@@ -21,4 +21,18 @@ export function alignSpans(items: readonly (string | undefined)[], spans: readon
     }
   }
   return out;
+}
+
+/**
+ * Remove the entries whose text layer is no longer in the document, and return their pages. pdf.js removes the text
+ * layer of a page that leaves its page-view buffer. An entry that keeps it holds detached spans that nothing can use.
+ */
+export function dropDetached<T extends { layer: { isConnected: boolean } }>(maps: Map<number, T>): number[] {
+  const dropped: number[] = [];
+  for (const [page, map] of maps) {
+    if (map.layer.isConnected) continue;
+    maps.delete(page);
+    dropped.push(page);
+  }
+  return dropped;
 }

@@ -14,7 +14,7 @@ import type { CursorState, Level, MoveResult } from './cursor.ts';
 import { clientRectToRect, itemRangeRect, mergeRects, nearestBox, rectToPct, unionRect } from './geometry.ts';
 import { Overlay } from './overlay.ts';
 import { PageStore } from './pages.ts';
-import { alignSpans } from './spans.ts';
+import { alignSpans, dropDetached } from './spans.ts';
 import { buildStaged, reanchor } from './staging.ts';
 
 type ViewerLib = typeof import('pdfjs-dist/web/pdf_viewer.mjs');
@@ -28,6 +28,9 @@ type PDFViewerOptions = ConstructorParameters<ViewerLib['PDFViewer']>[0] & { abo
 interface PageViewLike {
   div: HTMLDivElement;
   textLayer: { div: HTMLDivElement } | null;
+  // pdf.js 6.4 internal. It keeps the spans of the last text layer after a reset removes that layer. It serves the find
+  // bar, which this viewer does not have, and the link finder, which runs only while a text layer exists.
+  _textHighlighter?: { setTextMapping(divs: null, texts: null): void };
 }
 
 /** Text-layer spans by item index. pdf.js makes one span per text item, in item order. */
@@ -62,6 +65,36 @@ const MAX_RETRIES = 40;
 const AIM_MIN_MOVE = 12;
 // The pointer must be this close (in pixels) to a text span to aim at it.
 const AIM_MAX_DISTANCE = 24;
+
+let viewerLib: Promise<ViewerLib> | null = null;
+let worker: pdfjs.PDFWorker | null = null;
+
+/** pdf_viewer.mjs reads globalThis.pdfjsLib, which the pdfjs-dist import above sets. A dynamic import keeps that order. */
+function loadViewerLib(): Promise<ViewerLib> {
+  viewerLib ??= import('pdfjs-dist/web/pdf_viewer.mjs').catch((err: unknown) => {
+    viewerLib = null; // the next open tries again
+    throw err;
+  });
+  return viewerLib;
+}
+
+/**
+ * One pdf.js worker for all documents, so an open does not start a worker and load its 1.3 MB script again.
+ * A loading task destroys only a worker that it made itself, so close() leaves this one running.
+ */
+function sharedWorker(): pdfjs.PDFWorker {
+  if (!worker || worker.destroyed) {
+    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+    worker = new pdfjs.PDFWorker();
+  }
+  return worker;
+}
+
+/** Start the worker and load pdf_viewer.mjs before the first open, for example while the library is on screen. */
+export function warmViewer(): void {
+  sharedWorker();
+  loadViewerLib().catch(() => undefined); // open() reports the error
+}
 
 function prefersReducedMotion(): boolean {
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -166,9 +199,7 @@ export class Viewer implements ViewerApi {
   async open(url: string, opts: ViewerOpenOptions = {}): Promise<void> {
     this.close();
     const gen = ++this.generation;
-    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-    // pdf_viewer.mjs reads globalThis.pdfjsLib, which the pdfjs-dist import above sets. A dynamic import keeps that order.
-    this.lib ??= await import('pdfjs-dist/web/pdf_viewer.mjs');
+    this.lib ??= await loadViewerLib();
     if (gen !== this.generation) return;
     const lib = this.lib;
 
@@ -207,7 +238,7 @@ export class Viewer implements ViewerApi {
     this.wire(gen, opts.state ?? null);
 
     // PDF.js 6.4 has no isEvalSupported option. Scripting stays off because no scripting manager is set.
-    const task = pdfjs.getDocument({ url, rangeChunkSize: 65536, disableAutoFetch: true });
+    const task = pdfjs.getDocument({ url, rangeChunkSize: 65536, disableAutoFetch: true, worker: sharedWorker() });
     this.loadingTask = task;
     let pdf: PDFDocumentProxy;
     try {
@@ -335,6 +366,12 @@ export class Viewer implements ViewerApi {
   private async onTextLayer(gen: number, page: number): Promise<void> {
     const entry = await this.store?.ensure(page);
     if (!entry || gen !== this.generation) return;
+    // A new text layer means pdf.js may have reset another page view. Free the spans of the layers it removed: drop our
+    // map, and clear the copy in the pdf.js highlighter. A page that has a new text layer already keeps its new spans.
+    for (const p of dropDetached(this.spanMaps)) {
+      const view = this.pageView(p);
+      if (view && !view.textLayer) view._textHighlighter?.setTextMapping(null, null);
+    }
     this.buildSpanMap(page);
     // Replace approximate rects with precise ones now that the spans exist.
     if (this.staged?.passage.rects.some((r) => r.page === page) || this.cursorTouches(page)) this.restage(false);
