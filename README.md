@@ -7,6 +7,12 @@ into a pane beside the PDF. Focus never leaves the PDF.
 The app runs with no API key: a mock provider answers, so you can try the whole loop first. With a key, Claude answers.
 A local OpenAI-compatible server works too.
 
+![The reader: the PDF on the left with a staged paragraph, the answer pane on the right with the threads of the book, the ask field under them, and the status line with the mode, the staged passage, and the token usage.](docs/images/reader.png)
+
+Left: the PDF, with the current paragraph marked by the gutter bar. Right: the threads of the book, one per passage,
+with the latest one open and the ask field under them. Bottom: the hint strip for new users and the status line with
+the mode, the staged passage, the token usage, and the key help.
+
 ## Run
 
 Requirements: Node 22.12 or later, and pnpm.
