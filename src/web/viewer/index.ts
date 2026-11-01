@@ -7,7 +7,7 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import 'pdfjs-dist/web/pdf_viewer.css';
 import './viewer.css';
 import type { PassageAnchor, PassageInput, ReadingState, Rect, StagedSelection } from '../../shared/types.ts';
-import { itemEndToLogical, itemOffsetToLogical, offsetsToItemRanges } from '../../shared/segment/index.ts';
+import { itemEndToLogical, itemOffsetToLogical, offsetsToItemRanges, rangesWithoutSkips } from '../../shared/segment/index.ts';
 import type { ViewerApi, ViewerEvents, ViewerListener, ViewerOpenOptions } from './api.ts';
 import * as cur from './cursor.ts';
 import type { CursorState, Level, MoveResult } from './cursor.ts';
@@ -372,7 +372,10 @@ export class Viewer implements ViewerApi {
     this.spanMaps.set(page, map);
   }
 
-  /** Rects of [start, end) on a page: DOM ranges over text-layer spans, else item boxes. */
+  /**
+   * Rects of [start, end) on a page: DOM ranges over text-layer spans, else item boxes. A running header or footer
+   * inside the range gets no rect, so a passage that crosses a page break does not highlight the page furniture.
+   */
   private rectsFor = (page: number, start: number, end: number): Rect[] => {
     const entry = this.store?.get(page);
     if (!entry) return [];
@@ -380,7 +383,8 @@ export class Viewer implements ViewerApi {
     const pageDiv = this.pageView(page)?.div;
     const live = map && pageDiv && map.layer.isConnected && !map.layer.hidden;
     const out: Rect[] = [];
-    for (const r of offsetsToItemRanges(entry.pageText, start, end)) {
+    const ranges = rangesWithoutSkips(entry.pageText, start, end).flatMap(([a, b]) => offsetsToItemRanges(entry.pageText, a, b));
+    for (const r of ranges) {
       let done = false;
       const span = live ? map.spans[r.item] : undefined;
       if (span && pageDiv) {

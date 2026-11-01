@@ -19,17 +19,25 @@ export function spanIndexBefore(spans: readonly [number, number][], offset: numb
   return found;
 }
 
-/** The paragraph or furniture text without its skip spans, for [start, end). */
-export function textWithoutSkips(pageText: PageText, start: number, end: number): string {
-  let out = '';
+/** The parts of [start, end) that lie outside the skip spans (running headers, footers, footnotes), in order. */
+export function rangesWithoutSkips(pageText: PageText, start: number, end: number): [number, number][] {
+  const out: [number, number][] = [];
   let pos = start;
   const skips = [...pageText.skipSpans].sort((a, b) => a.start - b.start);
   for (const s of skips) {
     if (s.end <= pos || s.start >= end) continue;
-    if (s.start > pos) out += pageText.text.slice(pos, s.start);
+    if (s.start > pos) out.push([pos, s.start]);
     pos = Math.max(pos, s.end);
   }
-  if (pos < end) out += pageText.text.slice(pos, end);
+  if (pos < end) out.push([pos, end]);
+  return out;
+}
+
+/** The paragraph or furniture text without its skip spans, for [start, end). */
+export function textWithoutSkips(pageText: PageText, start: number, end: number): string {
+  const out = rangesWithoutSkips(pageText, start, end)
+    .map(([a, b]) => pageText.text.slice(a, b))
+    .join('');
   return out.replace(/\n{3,}/g, '\n\n').trim();
 }
 
