@@ -57,6 +57,15 @@ describe('markdown pipeline', () => {
     expect(renderMarkdown('Before\n\n$$\n\\int_0^1 x\\,dx\n$$\n\nAfter')).toContain('katex-display');
   });
 
+  it('keeps inline and display output apart when the same formula repeats', () => {
+    // The KaTeX cache keys on the mode, so a cached inline formula never comes back as display math.
+    const inline = renderMarkdown('First $z^3$ here.');
+    expect(renderMarkdown('First $z^3$ here.')).toBe(inline);
+    expect(inline).not.toContain('katex-display');
+    expect(renderMarkdown('$$z^3$$')).toContain('katex-display');
+    expect(renderMarkdown('Again $z^3$ here.')).not.toContain('katex-display');
+  });
+
   it('keeps prices and code spans as text', () => {
     const html = renderMarkdown('It costs $5 and $10. Use `$x$` in code.');
     expect(html).not.toContain('katex');

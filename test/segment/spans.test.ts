@@ -1,6 +1,6 @@
 // alignSpans pairs text items with text-layer spans. Pure logic; no DOM.
 import { describe, expect, it } from 'vitest';
-import { alignSpans } from '../../src/web/viewer/spans.ts';
+import { alignSpans, dropDetached } from '../../src/web/viewer/spans.ts';
 
 describe('alignSpans', () => {
   it('pairs one span per non-empty item and skips empty and marked-content items', () => {
@@ -18,5 +18,17 @@ describe('alignSpans', () => {
 
   it('does not reach past the lookahead', () => {
     expect(alignSpans(['a', 'z'], ['a', '1', '2', '3', '4', 'z'], 3)).toEqual([0, -1]);
+  });
+});
+
+describe('dropDetached', () => {
+  it('keeps the pages whose text layer is in the document and removes the rest', () => {
+    const maps = new Map([
+      [0, { layer: { isConnected: false } }],
+      [1, { layer: { isConnected: true } }],
+      [7, { layer: { isConnected: false } }],
+    ]);
+    expect(dropDetached(maps)).toEqual([0, 7]);
+    expect([...maps.keys()]).toEqual([1]);
   });
 });

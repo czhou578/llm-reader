@@ -2,6 +2,7 @@
 import type { AskContext, Message, PresetId, StagedSelection, StartRunRequest, StartRunResponse, Thread } from '../../shared/types.ts';
 import * as api from '../api/client.ts';
 import { mode } from '../commands/modes.ts';
+import { textBatcher } from '../chat/frameBatch.ts';
 import { pinMessage } from '../chat/paneControl.ts';
 import {
   activeRun,
@@ -120,14 +121,18 @@ async function startOnThread(thread: Thread, req: StartRunRequest): Promise<void
 }
 
 async function consume(runId: string, threadId: string, messageId: string): Promise<void> {
+  // Deltas render once per frame. Every other event first applies the pending text, so the events keep their order.
+  const text = textBatcher((t) => updateMessage(threadId, messageId, (m) => ({ ...m, content: m.content + t })));
   try {
     for await (const ev of api.runEvents(runId)) {
+      if (ev.type === 'delta') {
+        text.push(ev.text);
+        continue;
+      }
+      text.flush();
       switch (ev.type) {
         case 'run.start':
           updateMessage(threadId, messageId, (m) => ({ ...m, profile: ev.profile, model: ev.model }));
-          break;
-        case 'delta':
-          updateMessage(threadId, messageId, (m) => ({ ...m, content: m.content + ev.text }));
           break;
         case 'usage':
           updateMessage(threadId, messageId, (m) => ({ ...m, usage: { ...m.usage, ...ev.usage } }));
@@ -145,6 +150,7 @@ async function consume(runId: string, threadId: string, messageId: string): Prom
       }
     }
   } catch (err) {
+    text.flush();
     setRun(runId, { state: 'error', error: errorText(err) });
   }
   await refreshThread(threadId);
