@@ -34,7 +34,7 @@ export function chooseTarget(staged: PassageInput | null, threads: readonly Thre
 }
 
 export function targetLabel(target: AskTarget): string {
-  return target.kind === 'new' ? 'new thread' : `follow-up #${target.number}`;
+  return target.kind === 'new' ? 'New thread' : `Follow-up #${target.number}`;
 }
 
 /** A stable key for "the same preset on the same passage". */
@@ -55,11 +55,11 @@ export function isDuplicate(last: SentPreset | null, next: SentPreset, windowMs 
   return !!last && last.preset === next.preset && last.key === next.key && next.at - last.at < windowMs;
 }
 
-const LEVEL_LETTER: Record<PassageInput['kind'], string> = {
-  sentence: 'S',
-  paragraph: 'P',
-  selection: 'M',
-  region: 'R',
+const LEVEL_LABEL: Record<PassageInput['kind'], string> = {
+  sentence: 'Sentence',
+  paragraph: 'Paragraph',
+  selection: 'Selection',
+  region: 'Region',
 };
 
 let sentenceSegmenter: Intl.Segmenter | null = null;
@@ -80,16 +80,17 @@ export function pageLabel(loc: { page: number; pageLabel?: string | null }): str
   return `p. ${loc.pageLabel || loc.page + 1}`;
 }
 
-/** "S · 1 sentence · 24 words · p. 42" */
+/** "Paragraph · 3 sentences · 77 words · Page 53" */
 export function stagedSummary(staged: StagedSelection): string {
   const text = staged.passage.text;
   const sentences = countSentences(text);
   const words = countWords(text);
+  const loc = staged.location;
   return [
-    LEVEL_LETTER[staged.passage.kind],
+    LEVEL_LABEL[staged.passage.kind],
     `${sentences} ${sentences === 1 ? 'sentence' : 'sentences'}`,
     `${words} ${words === 1 ? 'word' : 'words'}`,
-    pageLabel(staged.location),
+    `Page ${loc.pageLabel || loc.page + 1}`,
   ].join(' · ');
 }
 

@@ -4,6 +4,7 @@ import * as api from '../api/client.ts';
 import { navigateToDoc } from '../app/router.ts';
 import { config, notice, showNotice } from '../app/session.ts';
 import { filterEntries } from './filter.ts';
+import { Icon } from './icons.tsx';
 import { pickAndOpen } from './upload.ts';
 
 function formatSize(bytes: number): string {
@@ -26,6 +27,32 @@ async function openEntry(entry: LibraryEntry): Promise<void> {
   }
 }
 
+/** A mouse press on a button must not take the focus from the filter input, so the next key still filters. */
+const keepFocus = (ev: MouseEvent): void => ev.preventDefault();
+
+interface Group {
+  label: string;
+  /** The folder on disk, shown next to the label. */
+  path?: string;
+  dateHead: string;
+  dateOf: (e: LibraryEntry) => string | undefined;
+  rows: { entry: LibraryEntry; index: number }[];
+}
+
+/** Documents opened before come first, then the other PDFs of books_dir. `index` is the position in the flat list. */
+function groupEntries(shown: readonly LibraryEntry[], booksDir: string | undefined): Group[] {
+  const recent: Group = { label: 'Recent', dateHead: 'Opened', dateOf: (e) => e.lastOpenedAt ?? e.mtime, rows: [] };
+  const folder: Group = { label: 'Folder', path: booksDir, dateHead: 'Modified', dateOf: (e) => e.mtime, rows: [] };
+  shown.forEach((entry, index) => (entry.docId ? recent : folder).rows.push({ entry, index }));
+  return [recent, folder].filter((g) => g.rows.length > 0);
+}
+
+function countText(entries: LibraryEntry[] | null, shown: number): string {
+  if (!entries) return '';
+  const total = `${entries.length} document${entries.length === 1 ? '' : 's'}`;
+  return shown === entries.length ? total : `${shown} of ${total}`;
+}
+
 /** The library: recent documents and the PDFs in books_dir. Type to filter, arrows move, Enter opens. */
 export function Library() {
   const [entries, setEntries] = useState<LibraryEntry[] | null>(null);
@@ -33,7 +60,7 @@ export function Library() {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
   const input = useRef<HTMLInputElement>(null);
-  const list = useRef<HTMLUListElement>(null);
+  const list = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api.getLibrary().then(setEntries, (err: unknown) => setError(err instanceof Error ? err.message : String(err)));
@@ -55,6 +82,8 @@ export function Library() {
 
   const shown = entries ? filterEntries(entries, query) : [];
   const index = Math.min(selected, Math.max(0, shown.length - 1));
+  const booksDir = config.value?.booksDir;
+  const groups = groupEntries(shown, booksDir);
 
   useLayoutEffect(() => {
     list.current?.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
@@ -79,58 +108,123 @@ export function Library() {
 
   return (
     <main class="library">
-      <header class="library-head">
-        <h1>llm-reader</h1>
-        <p class="muted">
-          Type to filter · <kbd>↑</kbd> <kbd>↓</kbd> move · <kbd>Enter</kbd> opens · <kbd>Ctrl+O</kbd> opens a file · or
-          drop a PDF here
-        </p>
+      <header class="library-top">
+        <div class="library-brand">
+          <span class="icon-box accent">
+            <Icon name="book" />
+          </span>
+          <h1>llm-reader</h1>
+        </div>
+        <button type="button" class="open-file" title="Open a PDF file (Ctrl+O)" onMouseDown={keepFocus} onClick={() => void pickAndOpen()}>
+          <Icon name="folder" />
+          Open file…
+          <span class="keys">
+            <kbd>Ctrl</kbd>
+            <kbd>O</kbd>
+          </span>
+        </button>
       </header>
-      <input
-        ref={input}
-        class="library-filter"
-        type="search"
-        placeholder="Filter by name or title"
-        aria-label="Filter the library"
-        value={query}
-        onInput={(e) => {
-          setQuery(e.currentTarget.value);
-          setSelected(0);
-        }}
-        onKeyDown={onKeyDown}
-      />
-      {error && <p class="error">Cannot load the library: {error}</p>}
-      {!entries && !error && <p class="muted">Loading…</p>}
-      {entries && shown.length === 0 && (
-        <p class="muted">
-          {entries.length === 0
-            ? `No PDFs yet. Put PDFs in ${config.value?.booksDir ?? 'books_dir'}, press Ctrl+O, or drop a file here.`
-            : 'No match.'}
-        </p>
-      )}
-      <ul class="library-list" ref={list} role="listbox" aria-label="Documents">
-        {shown.map((e, i) => (
-          <li
-            key={e.path}
-            role="option"
-            aria-selected={i === index}
-            class={i === index ? 'selected' : ''}
-            onClick={() => void openEntry(e)}
-            onMouseMove={() => i !== index && setSelected(i)}
-          >
-            <span class="entry-title">
-              {e.docId && <span class="entry-known" title="Opened before">●</span>}
-              {e.title || e.name}
+
+      <section class="library-pane" aria-label="Documents">
+        <div class="library-column">
+          <div class="library-filter-wrap">
+            <Icon name="search" />
+            <input
+              ref={input}
+              class="library-filter"
+              type="search"
+              placeholder="Filter by name or title"
+              aria-label="Filter the library"
+              value={query}
+              onInput={(e) => {
+                setQuery(e.currentTarget.value);
+                setSelected(0);
+              }}
+              onKeyDown={onKeyDown}
+            />
+          </div>
+
+          {error && <p class="library-empty error">Cannot load the library: {error}</p>}
+          {!entries && !error && <p class="library-empty muted">Loading…</p>}
+          {entries && shown.length === 0 && (
+            <p class="library-empty muted">
+              {entries.length === 0 ? `No PDFs yet. Put PDFs in ${booksDir ?? 'books_dir'}, press Ctrl+O, or drop a file here.` : 'No match.'}
+            </p>
+          )}
+
+          <div class="library-list" ref={list} role="listbox" aria-label="Documents">
+            {groups.map((g) => (
+              <div key={g.label} class="library-group" role="group" aria-label={g.label}>
+                <div class="group-head" aria-hidden="true">
+                  <span class="col-title">
+                    {g.label}
+                    {g.path && (
+                      <span class="group-path" title={g.path}>
+                        {g.path}
+                      </span>
+                    )}
+                  </span>
+                  <span class="col-size">Size</span>
+                  <span class="col-date">{g.dateHead}</span>
+                </div>
+                {g.rows.map(({ entry: e, index: i }) => (
+                  <div
+                    key={e.path}
+                    role="option"
+                    aria-selected={i === index}
+                    class={`entry${i === index ? ' selected' : ''}`}
+                    onClick={() => void openEntry(e)}
+                    onMouseMove={() => i !== index && setSelected(i)}
+                  >
+                    <span class="icon-box">
+                      <Icon name="file" size={20} />
+                    </span>
+                    <span class="entry-text">
+                      <span class="entry-title">{e.title || e.name}</span>
+                      {e.title && <span class="entry-name">{e.name}</span>}
+                    </span>
+                    <span class="entry-size">{formatSize(e.byteSize)}</span>
+                    <span class="entry-date">{formatDate(g.dateOf(e))}</span>
+                    <kbd class="entry-enter" aria-hidden="true">
+                      ↵
+                    </kbd>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <p class="drop-hint">
+            <Icon name="download" />
+            Drop a PDF here to open it
+          </p>
+        </div>
+      </section>
+
+      <footer class="status-line library-status">
+        {notice.value ? (
+          <span class="notice">{notice.value}</span>
+        ) : (
+          <span class="hints" aria-hidden="true">
+            <span class="hint">Type to filter</span>
+            <span class="hint">
+              <kbd>↑</kbd>
+              <kbd>↓</kbd> Move
             </span>
-            <span class="entry-meta muted">
-              {e.title ? `${e.name} · ` : ''}
-              {formatSize(e.byteSize)}
-              {e.lastOpenedAt ? ` · opened ${formatDate(e.lastOpenedAt)}` : ` · ${formatDate(e.mtime)}`}
+            <span class="hint">
+              <kbd>↵</kbd> Open
             </span>
-          </li>
-        ))}
-      </ul>
-      {notice.value && <div class="library-notice" aria-live="polite">{notice.value}</div>}
+            <span class="hint">
+              <kbd>Ctrl</kbd>
+              <kbd>O</kbd> Open file
+            </span>
+          </span>
+        )}
+        <span class="doc-count">{countText(entries, shown.length)}</span>
+        <span class="visually-hidden" aria-live="polite">
+          {notice.value ?? ''}
+        </span>
+      </footer>
     </main>
   );
 }

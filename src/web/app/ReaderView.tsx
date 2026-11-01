@@ -4,14 +4,15 @@ import type { DocId, ReadingState } from '../../shared/types.ts';
 import * as api from '../api/client.ts';
 import { AnswerPane } from '../chat/AnswerPane.tsx';
 import { mode } from '../commands/modes.ts';
+import { Icon } from '../library/icons.tsx';
 import { Viewer } from '../viewer/index.ts';
-import { AskBox } from './AskBox.tsx';
+import { AskBox, AskPrompt } from './AskBox.tsx';
 import { CheatCard } from './CheatCard.tsx';
 import { HintStrip } from './HintStrip.tsx';
-
 import { Palette } from './Palette.tsx';
-import { askOpen, doc, helpOpen, memory, paletteOpen, paneHidden, showNotice, staged, threadIds, threads } from './session.ts';
-import { StatusLine } from './StatusLine.tsx';
+import { navigateToLibrary } from './router.ts';
+import { askOpen, config, doc, memory, paletteOpen, paneHidden, showNotice, staged, threadIds, threads } from './session.ts';
+import { keepFocus, StatusLine } from './StatusLine.tsx';
 
 const SAVE_DELAY_MS = 1000;
 
@@ -76,6 +77,20 @@ function useViewer(docId: DocId, container: { current: HTMLDivElement | null }):
   });
 }
 
+/** The model that answers, from the strong role. The mock provider gets a warning color. */
+function ModelBadge() {
+  const c = config.value;
+  const strong = c ? c.profiles[c.roles.strong] : undefined;
+  if (!strong) return null;
+  const mock = strong.provider === 'mock';
+  return (
+    <span class={`model-badge${mock ? ' model-mock' : ''}`} title={mock ? 'No API key is set, so the mock provider answers' : 'The model that answers'}>
+      <Icon name="sparkle" size={14} />
+      {mock ? 'mock answers · no API key' : strong.model}
+    </span>
+  );
+}
+
 export function ReaderView() {
   const d = doc.value;
   const container = useRef<HTMLDivElement>(null);
@@ -84,6 +99,15 @@ export function ReaderView() {
 
   return (
     <div class={`reader${paneHidden.value ? ' pane-hidden' : ''}`}>
+      <header class="reader-top">
+        <button type="button" class="back-button" title="Back to the library (:open)" aria-label="Back to the library" onMouseDown={keepFocus} onClick={() => navigateToLibrary()}>
+          <Icon name="chevron-left" size={20} />
+        </button>
+        <h1 class="reader-title" title={d?.title}>
+          {d?.title}
+        </h1>
+        <ModelBadge />
+      </header>
       <section
         class={`pdf-pane${reading ? '' : ' focused'}`}
         aria-label="PDF"
@@ -101,12 +125,12 @@ export function ReaderView() {
         }}
       >
         <AnswerPane />
+        <div class="ask-dock">{askOpen.value ? <AskBox /> : <AskPrompt />}</div>
       </aside>
       <div class="bottom">
         <HintStrip />
         <StatusLine />
       </div>
-      {askOpen.value && <AskBox />}
       {paletteOpen.value && <Palette />}
       <CheatCard />
     </div>

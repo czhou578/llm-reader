@@ -1,5 +1,5 @@
-// Shared contract for llm-reader v0. FROZEN during the v0 build: agents extend it only in their own modules.
-// See docs/v0-contract.md for the API and module boundaries, and DESIGN.md for the rationale.
+// The types that the server and the browser share: documents, passages, threads, runs, and the LLM adapter.
+// See DESIGN.md for the rationale and docs/design/architecture.md for the module boundaries.
 
 export const SEGMENTER_VERSION = 1;
 

@@ -1,4 +1,4 @@
-// The PDF viewer (docs/v0-contract.md "Viewer module"). It implements the frozen ViewerApi from api.ts.
+// The PDF viewer. It implements the ViewerApi from api.ts, which the shell codes against.
 // pdf.js PDFViewer owns the canvas and the text layer. This module owns the overlay, the reading cursor,
 // the mouse-selection mapping, and the StagedSelection. It does not import Preact.
 import * as pdfjs from 'pdfjs-dist';

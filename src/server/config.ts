@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { parse as parseToml } from 'smol-toml';
 import type { AppConfig, ClientConfig, ProfileConfig, ProviderKind } from '../shared/types.ts';
 
-// Loads the config per docs/v0-contract.md "Config". The file holds the NAME of a key variable, never a key.
+// Loads the config (README "Configuration"). The file holds the NAME of a key variable, never a key.
 
 /** Server-side profile: the shared ProfileConfig plus options that only the server reads. */
 export interface ServerProfile extends ProfileConfig {

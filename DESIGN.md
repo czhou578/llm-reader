@@ -1,6 +1,6 @@
 # llm-reader: design
 
-**Status:** draft v0.4, 2026-10-23. Nothing is built yet. v0.2 added the running-cost estimate (section 6.7). v0.3 applied the user's answers to the open questions: a left-hand keymap, local files first, and a local-model option (sections 5.7, 6.8, 13). v0.4 removes voice input and read-aloud at the user's request.
+**Status:** design v0.4, 2026-10-23; Phase 0 (section 10) is built as of 2026-10-31, see [README.md](README.md). The later phases describe plans, not the current program. v0.2 added the running-cost estimate (section 6.7). v0.3 applied the user's answers to the open questions: a left-hand keymap, local files first, and a local-model option (sections 5.7, 6.8, 13). v0.4 removes voice input and read-aloud at the user's request.
 **Audience:** the author of the tool, and anyone who builds on it later.
 **Detail:** this file is the authoritative design. The three research appendices under
 [docs/design/](docs/design/) hold the full detail. Where an appendix differs from this file, this file wins.
@@ -19,7 +19,7 @@ The design rests on three decisions:
 
 The plan has three phases. Phase 0 is a weekend build that already removes the copy-paste and the focus-switch pain. Phase 1 adds the context engine and the notes. Phase 2 adds figures, OCR, and learning features.
 
-The user's Claude Max 5x plan includes $100 of Claude API credit per month. On Opus 5.5 that credit covers roughly 400 reading hours a month, so the tool is close to free to run (section 6.7).
+An hour of reading costs about a quarter of a US dollar on Opus 5.5 with prompt caching, so the tool is cheap to run (section 6.7).
 
 ---
 
@@ -515,20 +515,9 @@ Length: at most 5 terms, at most 40 words per term.
 
 The full set of templates, the running-summary prompt, the glossary prompt, and the index-line prompt are in [docs/design/context-and-plan.md](docs/design/context-and-plan.md), section 3.
 
-### 6.7 Running cost on the Max plan credit
+### 6.7 Running cost
 
-**The provider decision.** The user is on the Claude Max 5x plan. Since October 7, 2026, that plan includes $100 USD of Claude API credit per month. The credit covers the Claude API, the Agent SDK, Managed Agents, and the Console Playground, with any available model. It does not cover interactive Claude Code or extra usage in the Claude apps. Phase 0 therefore ships the `anthropic` driver first. The `openai-compatible` driver follows in Phase 1.
-
-Facts about the credit, from Anthropic's docs page and Help Center article:
-
-| Item | Detail |
-|---|---|
-| Amount | $100 USD per month on Max 5x. $200 USD on Max 20x. |
-| Claim | On claude.ai, Settings > Billing > API credits. Link one Claude Console organization. New subscribers can claim after 7 days on the plan. No payment method is required. |
-| Expiry | Unused credit expires at the end of each billing cycle. There is no rollover. |
-| When it runs out | API requests stop until the next credit arrives, unless the organization also holds purchased credit. Nothing is charged to the Max plan. |
-| Caution | Each plan links to one Console organization, and the user cannot change the link without support. Link the organization that llm-reader will use. |
-| End date | None stated. |
+**The provider decision.** Phase 0 ships the `anthropic` driver first, with Opus 5.5 as the strong role. The `openai-compatible` driver follows in Phase 1, for a local model or another hosted provider.
 
 **The token model per reading hour.** The appendix estimates one hour of reading as about 25 pages and 12 asks. The strong role answers the asks. The fast role runs the background jobs.
 
@@ -549,12 +538,12 @@ Facts about the credit, from Anthropic's docs page and Help Center article:
 
 **Cost per reading hour on Opus 5.5.**
 
-| Configuration | Arithmetic | Per hour | Hours per $100 |
-|---|---|---|---|
-| Opus 5.5 strong, local model fast, caching on (the design default) | 36,000 × $4 + 36,000 × $0.20 + 3,600 × $20, all per million; the fast role costs nothing | $0.22 | about 450 |
-| Opus 5.5 strong, Haiku 5.5 fast, caching on | the first row + 59,000 × $0.10 + 5,000 × $0.50 | $0.23 | about 430 |
-| Opus 5.5 strong, Haiku 5.5 fast, caching off | 72,000 × $4 + 3,600 × $20 + the same fast cost | $0.37 | about 270 |
-| Opus 5.5 for both roles, caching on | the first row, with the fast tokens at Opus prices | $0.56 | about 180 |
+| Configuration | Arithmetic | Per hour |
+|---|---|---|
+| Opus 5.5 strong, local model fast, caching on (the design default) | 36,000 × $4 + 36,000 × $0.20 + 3,600 × $20, all per million; the fast role costs nothing | $0.22 |
+| Opus 5.5 strong, Haiku 5.5 fast, caching on | the first row + 59,000 × $0.10 + 5,000 × $0.50 | $0.23 |
+| Opus 5.5 strong, Haiku 5.5 fast, caching off | 72,000 × $4 + 3,600 × $20 + the same fast cost | $0.37 |
+| Opus 5.5 for both roles, caching on | the first row, with the fast tokens at Opus prices | $0.56 |
 
 Per request, on the design default:
 
@@ -566,8 +555,8 @@ Per request, on the design default:
 
 **What this means.**
 
-- A month of 40 reading hours costs about $9 on the design default. The credit covers that more than ten times over.
-- The credit expires each month, so there is no reason to save it. The context budget can rise above 6,000 tokens, and Deep asks can be routine, long before cost matters.
+- A month of 40 reading hours costs about $9 on the design default.
+- At that price the context budget can rise above 6,000 tokens, and Deep asks can be routine, long before cost matters.
 - The two-role split still pays. Background jobs on Opus 5.5 more than double the hourly cost, as the last row shows. The design default runs the fast role on the local model (section 6.8).
 - The design keeps the cost readout and the per-profile prices in the config. The readout shows whether the real numbers match this estimate.
 
@@ -583,11 +572,11 @@ The estimate ignores two small items: cache writes cost more than plain input, a
 
 **Suitability for this task.** The strong role needs four things: follow an 11-rule system prompt, resolve back-references inside a 6,000-token context, use the book's own terminology, and keep to a length limit. A current large open model does all four. The gap to Opus 5.5 shows in nuance: how well it separates the book from outside knowledge, how honest it is when a passage is unclear, and how precise it is on technical detail. For single-column prose books the gap is probably modest. For the fast role, a local model is at least as good as the API. Summaries, glossary lines, and index lines are simple extraction tasks, and local means free, private, offline, and free of rate limits. The coding benchmarks published for the model say little about this task either way.
 
-**The credit is use-it-or-lose-it.** Unused credit expires every month. Not using it saves nothing, unless the user has other API projects. A local model therefore earns its place through privacy, offline use, and the fast role, not through cost.
+**Cost is not the reason for a local model.** Section 6.7 puts a reading hour at a quarter of a US dollar. A local model therefore earns its place through privacy, offline use, and the fast role, not through cost.
 
 **Recommendation.**
 
-1. Strong role: Opus 5.5 on the credit. This is the default in the config.
+1. Strong role: Opus 5.5. This is the default in the config.
 2. Fast role: the local model. All background jobs run on it. Nothing leaves the machine except the asks.
 3. Private mode: one setting switches the strong role to the local profile, for a book the user does not want to send out, or for offline use.
 4. Run a two-week comparison. The one-key usefulness rating and the "clarify that" follow-up rate are logged per role. If the local model is rated useful on at least 80 % of Explain asks, flip the default and keep Opus 5.5 for Deep asks and Critique.
@@ -719,7 +708,7 @@ provider = "openai-compatible"
 base_url = "http://127.0.0.1:8000/v1"   # llama.cpp server, vLLM, or Ollama on the Spark; no key
 model    = "Qwen3.8-Flash-Next"
 
-[profiles.haiku]            # alternative fast role on the credit
+[profiles.haiku]            # alternative hosted fast role
 provider    = "anthropic"
 base_url    = "https://api.anthropic.com"
 model       = "claude-haiku-5-5"
@@ -885,7 +874,7 @@ Do not start a phase before the previous one is in real daily use for at least a
 
 **Pieces.**
 
-1. Server: Hono, file open and the `books_dir` scan, Range serving, SQLite with the tables in 7.6, the `anthropic` driver (the Max plan credit covers it, section 6.7), SSE runs with cancel.
+1. Server: Hono, file open and the `books_dir` scan, Range serving, SQLite with the tables in 7.6, the `anthropic` driver (section 6.7), SSE runs with cancel.
 2. Viewer: `PDFViewer`, the overlay layer, per-page segmentation for visible pages, the char map, the reading cursor with `Space` `q` `w` `s` `a` `d` `p`, mouse auto-stage.
 3. Keymap dispatcher with the `NORMAL`, `ASK`, and `READER` modes. `Tab`, `Esc`, `'`, `r`, `=`, `-`. The first-run cheat card and the key-hint strip.
 4. Context builder with S, C (title and bookmark outline), F, A, B, and the raw previous page in place of D1.
@@ -1001,8 +990,8 @@ The user answered the first seven questions on 2026-10-23. The answers and the r
 
 | Question | Answer | Decision in this design |
 |---|---|---|
-| Provider | Claude Max 5x, with $100 of API credit per month | `anthropic` driver first. Opus 5.5 as the strong role. Section 6.7. |
-| Local model | Interested in Qwen3.8-Flash-Next, to avoid the credit | The local model runs the fast role and private mode. Opus 5.5 stays the strong role until a two-week comparison says otherwise. The credit expires monthly, so avoiding it saves nothing. Section 6.8. |
+| Provider | Anthropic, with a local model as an option | `anthropic` driver first. Opus 5.5 as the strong role. Section 6.7. |
+| Local model | Interested in Qwen3.8-Flash-Next | The local model runs the fast role and private mode. Opus 5.5 stays the strong role until a two-week comparison says otherwise. Section 6.8. |
 | PDF sources | Mostly local files | File open first. URL fetch is Phase 1. Login fallbacks and the extension are later, if ever. |
 | PDF kind | Single-column books | Column handling stays in the segmenter, but two-column fixtures move to later. Running headers, the page-label map, and chapter detection matter most. The region ask stays Phase 2. |
 | Vim keys | Not used, willing to learn simple keys | The `left` layout is the default: WASD movement and ten core keys. The `home` layout is optional. |
@@ -1012,10 +1001,9 @@ The user answered the first seven questions on 2026-10-23. The answers and the r
 Still open:
 
 1. **Answers beside the PDF, or the PDF at full width with answers in an overlay?** What is the screen size? This sets the default layout.
-2. **Which Console organization should hold the API credit, and is it linked yet?** The link cannot be changed without support.
-3. **Is Qwen3.8-Flash-Next already installed, and with which server?** llama.cpp, vLLM, or Ollama. This sets the `base_url` and the model name in the config.
-4. **Do math and figures matter in the books you read?** If yes, the region ask moves from Phase 2 to Phase 1.
-5. **Does light tapping with the right hand hurt too, or only clicking?** If tapping hurts, a foot pedal for `Space` and `Enter` moves up, and the rare keys move to the left hand as well.
+2. **Is Qwen3.8-Flash-Next already installed, and with which server?** llama.cpp, vLLM, or Ollama. This sets the `base_url` and the model name in the config.
+3. **Do math and figures matter in the books you read?** If yes, the region ask moves from Phase 2 to Phase 1.
+4. **Does light tapping with the right hand hurt too, or only clicking?** If tapping hurts, a foot pedal for `Space` and `Enter` moves up, and the rare keys move to the left hand as well.
 
 ---
 

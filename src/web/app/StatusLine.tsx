@@ -1,4 +1,5 @@
 import { mode } from '../commands/modes.ts';
+import { keyFor } from './HintStrip.tsx';
 import { activeRun, helpOpen, notice, runSeconds, staged, stagedTarget, usage } from './session.ts';
 import { PRESET_LABEL, stagedSummary, targetLabel } from './target.ts';
 
@@ -36,7 +37,7 @@ function liveText(): string {
 /** Keep keyboard focus where it is when a toolbar button is clicked, so the next key still goes to the PDF. */
 export const keepFocus = (ev: MouseEvent): void => ev.preventDefault();
 
-/** The help icon: it opens and closes the key card, as `?` does. */
+/** The shortcuts button: it opens and closes the key card, as `?` does. */
 function HelpButton() {
   const open = helpOpen.value;
   return (
@@ -44,13 +45,12 @@ function HelpButton() {
       type="button"
       class={`help-button${open ? ' active' : ''}`}
       title="Keyboard shortcuts (?)"
-      aria-label="Keyboard shortcuts"
       aria-haspopup="dialog"
       aria-expanded={open}
       onMouseDown={keepFocus}
       onClick={() => (helpOpen.value = !open)}
     >
-      ?
+      <kbd>?</kbd> Shortcuts
     </button>
   );
 }
@@ -58,6 +58,7 @@ function HelpButton() {
 export function StatusLine() {
   const s = staged.value;
   const u = usage.value?.session;
+  const selectKey = keyFor('cursor.next_sentence', 'NORMAL') ?? 's';
   return (
     <footer class="status-line">
       <span class={`mode mode-${mode.value.toLowerCase()}`}>{mode.value}</span>
@@ -65,16 +66,11 @@ export function StatusLine() {
         {notice.value ? (
           <span class="notice">{notice.value}</span>
         ) : s ? (
-          <>
-            <span class="staged-summary">
-              {stagedSummary(s)} · {targetLabel(stagedTarget.value)}
-            </span>
-            <span class="staged-text" title={s.passage.text}>
-              {s.passage.text}
-            </span>
-          </>
+          <span class="staged-summary">
+            {stagedSummary(s)} · {targetLabel(stagedTarget.value)}
+          </span>
         ) : (
-          <span class="muted">Nothing staged · s selects a sentence</span>
+          <span class="muted">Nothing staged · {selectKey} selects a sentence</span>
         )}
       </span>
       <RunStateView />
@@ -82,6 +78,11 @@ export function StatusLine() {
         <span class="usage-total" title="Tokens in this server session">
           {formatTokens(u.inputTokens)} in · {formatTokens(u.outputTokens)} out
           {u.costUsd != null ? ` · $${u.costUsd.toFixed(3)}` : ''}
+        </span>
+      )}
+      {s && !notice.value && (
+        <span class="staged-text" title={s.passage.text}>
+          {s.passage.text}
         </span>
       )}
       <HelpButton />

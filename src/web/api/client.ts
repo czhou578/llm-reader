@@ -1,4 +1,4 @@
-// Typed wrappers for the server HTTP API (docs/v0-contract.md, "Server HTTP API").
+// Typed wrappers for the server HTTP API (src/server/routes). Errors arrive as { error: { code, message } }.
 // The URLs are relative: Vite proxies /api to 127.0.0.1:7777 in dev, and the server serves dist/ in production.
 import type {
   ClientConfig,

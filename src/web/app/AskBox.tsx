@@ -1,23 +1,27 @@
-import { useLayoutEffect, useMemo, useRef } from 'preact/hooks';
-import { askBox, memory, threads } from './session.ts';
+import { useLayoutEffect, useRef } from 'preact/hooks';
+import { openAskBox } from './ask.ts';
+import { keyFor } from './HintStrip.tsx';
+import { askBox, threads } from './session.ts';
+import { keepFocus } from './StatusLine.tsx';
 import { countWords, threadNumber } from './target.ts';
-import { passageClientBox, placeAskBox } from './geometry.ts';
 
 const MAX_LINES = 5;
 
-/** The ask box (DESIGN.md 5.3): one line that grows to five, near the staged passage. */
+/** The closed dock: a prompt that opens the ask box, as the ask key does. The focus stays where it is. */
+export function AskPrompt() {
+  const key = keyFor('ask.open', 'NORMAL');
+  return (
+    <button type="button" class="ask-prompt" title="Ask a typed question about the staged passage" onMouseDown={keepFocus} onClick={() => openAskBox()}>
+      <span>Ask about the selection…</span>
+      {key && <kbd>{key}</kbd>}
+    </button>
+  );
+}
+
+/** The open ask box (DESIGN.md 5.3), docked at the bottom of the answer pane. One line that grows to five. */
 export function AskBox() {
   const box = askBox.value;
   const input = useRef<HTMLTextAreaElement>(null);
-
-  // The position is fixed when the box opens. The PDF does not scroll while the box has focus.
-  const placement = useMemo(() => {
-    const container = memory.viewerContainer;
-    if (!container) return null;
-    const pane = container.getBoundingClientRect();
-    const passage = box?.staged ? passageClientBox(container, box.staged.passage.rects) : null;
-    return placeAskBox(passage, pane, window.innerHeight);
-  }, []);
 
   useLayoutEffect(() => {
     input.current?.focus();
@@ -36,22 +40,19 @@ export function AskBox() {
   const head = text.length > 80 ? `${text.slice(0, 80)}…` : text;
   const target =
     box.target === 'new' ? 'New question' : `Follow-up in thread #${box.followThreadId ? threadNumber(threads.value, box.followThreadId) : '?'}`;
-  const style = placement
-    ? { left: `${placement.left}px`, width: `${placement.width}px`, top: placement.top !== undefined ? `${placement.top}px` : undefined, bottom: placement.bottom !== undefined ? `${placement.bottom}px` : undefined }
-    : undefined;
 
   return (
-    <div class="ask-box" role="dialog" aria-label="Ask a question" style={style}>
+    <div class="ask-box" role="dialog" aria-label="Ask a question">
       <div class="ask-head">
-        {head ? <span class="ask-quote">“{head}”</span> : null}
-        {text ? <span class="muted"> · {countWords(text)} words</span> : null}
         <span class={`ask-target target-${box.target}`}>{target}</span>
+        {head ? <span class="ask-quote">“{head}”</span> : null}
+        {text ? <span class="muted">{countWords(text)} words</span> : null}
       </div>
       <textarea
         ref={input}
         rows={1}
         value={box.draft}
-        placeholder="Type a question"
+        placeholder="Ask about the selection…"
         aria-label="Question"
         onInput={(e) => {
           const current = askBox.value;

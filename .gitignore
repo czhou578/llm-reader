@@ -1,14 +1,36 @@
+# Dependencies and build output
 node_modules/
 dist/
 build/
 coverage/
 .vite/
-*.log
-.env
-.env.*
+*.tsbuildinfo
+.pnpm-store/
+
+# Local data: the SQLite store, PDF blobs, and anything a run writes
 data/
 *.db
 *.db-wal
 *.db-shm
+*.log
+
+# Secrets and local config. The real files live in ~/.config/llm-reader; a copy in the repo must never be committed.
+.env
+.env.*
+secrets.env
+/config.toml
+
+# Books. The library reads them from books_dir, outside the repo.
+*.pdf
+
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+*~
 .DS_Store
+Thumbs.db
+
+# Local tool state
+.claude/settings.local.json
 .review/

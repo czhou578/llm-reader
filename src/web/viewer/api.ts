@@ -1,4 +1,4 @@
-// Viewer interface. FROZEN during the v0 build. The shell (src/web/app) codes against this; the viewer implements it.
+// Viewer interface. The shell (src/web/app) codes against this; the viewer (index.ts) implements it.
 import type { PassageInput, ReadingState, StagedSelection } from '../../shared/types.ts';
 
 export interface ViewerEvents {

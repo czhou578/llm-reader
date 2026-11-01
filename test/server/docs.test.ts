@@ -121,5 +121,12 @@ describe('documents over HTTP', () => {
     expect(cross.status).toBe(403);
     const dev = await postJson(`${srv.api}/docs/open`, { path: pdfPath }, { origin: 'http://127.0.0.1:5173' });
     expect(dev.status).toBe(200);
+    // Any loopback port passes: VS Code port forwarding often lands the app on another local port.
+    const forwarded = await postJson(`${srv.api}/docs/open`, { path: pdfPath }, { origin: 'http://localhost:5174' });
+    expect(forwarded.status).toBe(200);
+    const spoofed = await postJson(`${srv.api}/docs/open`, { path: pdfPath }, { origin: 'http://evil.example:5173' });
+    expect(spoofed.status).toBe(403);
+    const opaque = await postJson(`${srv.api}/docs/open`, { path: pdfPath }, { origin: 'null' });
+    expect(opaque.status).toBe(403);
   });
 });

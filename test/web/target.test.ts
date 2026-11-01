@@ -49,7 +49,7 @@ describe('follow-up rule', () => {
       expect(target.thread.id).toBe('t2');
       expect(target.number).toBe(2);
     }
-    expect(targetLabel(target)).toBe('follow-up #2');
+    expect(targetLabel(target)).toBe('Follow-up #2');
   });
 
   it('starts a new thread when the passage equals an older thread only', () => {
@@ -66,7 +66,7 @@ describe('follow-up rule', () => {
   it('starts a new thread with no threads or no staged passage', () => {
     expect(chooseTarget(a, []).kind).toBe('new');
     expect(chooseTarget(null, threads).kind).toBe('new');
-    expect(targetLabel({ kind: 'new' })).toBe('new thread');
+    expect(targetLabel({ kind: 'new' })).toBe('New thread');
   });
 
   it('picks the latest thread by createdAt', () => {
@@ -96,7 +96,7 @@ describe('status line summary', () => {
       surrounding: '',
       pageText: '',
     };
-    expect(stagedSummary(s)).toBe('S · 1 sentence · 11 words · p. 42');
+    expect(stagedSummary(s)).toBe('Sentence · 1 sentence · 11 words · Page 42');
   });
 });
 

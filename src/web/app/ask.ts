@@ -10,6 +10,7 @@ import {
   askBox,
   doc,
   memory,
+  paneHidden,
   runSeconds,
   showNotice,
   staged as stagedSignal,
@@ -224,6 +225,7 @@ export function openAskBox(): void {
     };
   }
   memory.lastPreset = 'ask';
+  paneHidden.value = false; // the box lives in the answer pane
   mode.value = 'ASK';
 }
 

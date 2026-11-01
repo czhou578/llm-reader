@@ -8,7 +8,7 @@ import { getDocument, insertDocument, listRecentDocuments, touchDocument, type S
 import { HttpError } from '../errors.ts';
 import { isPdf, readPdfMeta } from './pdf.ts';
 
-// Document open, upload, and the library list (docs/v0-contract.md "Document open").
+// Document open, upload, and the library list.
 
 export const MAX_PDF_BYTES = 1024 * 1024 * 1024; // 1 GiB; a larger file is almost surely not a book
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env -S npx tsx
-// llm-reader CLI: `serve`, `open <path>`, `doctor` (docs/v0-contract.md "CLI"). Run as `pnpm llm-reader <cmd>`.
+// llm-reader CLI: `serve`, `open <path>`, `doctor`. Run as `pnpm llm-reader <cmd>`.
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { ConfigError, expandHome, hasKey, loadConfig, loadSecretsFile, type SecretsResult } from '../src/server/config.ts';

@@ -1,8 +1,11 @@
 import 'katex/dist/katex.min.css';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'preact/hooks';
 import type { Message, Thread, Usage } from '../../shared/types.ts';
-import { activeThreadId, config, doc, memory, threads } from '../app/session.ts';
+import { keyFor } from '../app/HintStrip.tsx';
+import { activeThreadId, helpOpen, memory, threads } from '../app/session.ts';
+import { keepFocus } from '../app/StatusLine.tsx';
 import { pageLabel, PRESET_LABEL } from '../app/target.ts';
+import { Icon } from '../library/icons.tsx';
 import { firstSentence, renderMarkdown } from './markdown.ts';
 import { applyPin, onPaneScroll, onUserScrollIntent, revealThread, setPaneElement } from './paneControl.ts';
 
@@ -93,6 +96,25 @@ function ThreadLine({ thread, number }: { thread: Thread; number: number }) {
   );
 }
 
+/** The pane before the first question: the two keys of the core loop, and a way to the key card. */
+function EmptyState() {
+  const select = keyFor('cursor.next_sentence', 'NORMAL') ?? 's';
+  return (
+    <div class="empty-state">
+      <span class="icon-box">
+        <Icon name="message" size={22} />
+      </span>
+      <h2>No questions yet</h2>
+      <p>
+        Press <kbd>{select}</kbd> to select a sentence, then <kbd>↵</kbd> to explain it.
+      </p>
+      <button type="button" class="link-button" onMouseDown={keepFocus} onClick={() => (helpOpen.value = true)}>
+        See all shortcuts
+      </button>
+    </div>
+  );
+}
+
 /** The answer pane: all threads of the document, oldest first. The active thread is expanded. */
 export function AnswerPane() {
   const ref = useRef<HTMLDivElement>(null);
@@ -105,11 +127,10 @@ export function AnswerPane() {
 
   const list = threads.value;
   const active = activeThreadId.value;
-  const strong = config.value ? config.value.profiles[config.value.roles.strong] : undefined;
 
   return (
     <div
-      class="answer-scroll"
+      class={`answer-scroll${list.length === 0 ? ' is-empty' : ''}`}
       ref={ref}
       tabIndex={-1}
       onScroll={onPaneScroll}
@@ -117,21 +138,8 @@ export function AnswerPane() {
       onTouchMove={onUserScrollIntent}
       aria-label="Answers"
     >
-      <header class="pane-head">
-        <span class="doc-title">{doc.value?.title}</span>
-        {strong && (
-          <span class={`model${strong.provider === 'mock' ? ' model-mock' : ''}`} title="The model for asks (role: strong)">
-            {strong.provider === 'mock' ? 'mock answers (no API key)' : strong.model}
-          </span>
-        )}
-      </header>
       {list.length === 0 ? (
-        <div class="empty muted">
-          <p>No questions yet.</p>
-          <p>
-            Press <kbd>s</kbd> to select a sentence, then <kbd>Enter</kbd> to explain it.
-          </p>
-        </div>
+        <EmptyState />
       ) : (
         list.map((t, i) =>
           t.id === active ? <ThreadView key={t.id} thread={t} number={i + 1} /> : <ThreadLine key={t.id} thread={t} number={i + 1} />,
