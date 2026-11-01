@@ -242,7 +242,7 @@ A streaming answer **never** takes focus. A new answer never moves the cursor an
 
 ### 3.2 Read an answer without a focus change
 
-The answer pane is visible next to the PDF. A short answer fits in the pane, so the user reads it with their eyes and presses no key. For this reason, the answer pane scrolls so that the **first line** of the new answer is at the top. The pane does not follow the end of the stream, because the user reads from the top. If the user scrolls the pane during the stream, the auto-scroll stops.
+The answer pane is visible next to the PDF. A short answer fits in the pane, so the user reads it with their eyes and presses no key. The answer pane scrolls the new answer into view and follows the end of the stream, so the newest text stays visible. If the user scrolls the pane during the stream, the auto-scroll stops.
 
 ### 3.3 Signals for a streaming answer
 

@@ -251,13 +251,12 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 1rem 1.25rem 40vh;
+  padding: 1rem 1.25rem 1.5rem;
   font-size: var(--answer-size);
   line-height: var(--answer-leading);
   outline: none;
   scroll-behavior: auto;
 }
-.answer-scroll.is-empty { padding-bottom: 1rem; }
 .empty-state {
   display: flex;
   flex-direction: column;

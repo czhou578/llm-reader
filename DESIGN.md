@@ -121,7 +121,7 @@ The user reads page 42 of a two-column physics textbook.
 | 17 s | `Space` | The bar moves to paragraph 3. |
 | 21 s | `s` `s` | The second sentence of paragraph 3 gets the tint. The status line shows "1 sentence · 24 words · new thread". |
 | 23 s | `Enter` | Explain. The status line shows "◌ explain… 1 s". A ring pulses in the gutter. |
-| 25 s | | The answer streams into the pane, first line at the top. The user reads it with no key. |
+| 25 s | | The answer streams into the pane, which follows the newest text. The user reads it with no key. |
 | 33 s | `Tab` `Space` | The answer is long. Focus moves to the pane and scrolls one screen. |
 | 40 s | `v` | The ask box opens. Its header says "Follow-up in thread #7". |
 | 41 s | (types) | "why is the temperature fixed but not the energy" |
@@ -291,7 +291,7 @@ In `ASK` and `SEARCH` modes all letters are text. A letter never runs a `NORMAL`
 
 A streaming answer never takes focus. It never moves the cursor and never scrolls the PDF.
 
-The answer pane scrolls so that the **first line** of a new answer is at the top. It does not follow the end of the stream, because the user reads from the top. A short answer fits in the pane, so the user reads it with no key.
+The answer pane scrolls a new answer into view and then follows the end of the stream, so the newest text is always visible. A short answer fits in the pane, so the user reads it with no key. A scroll by the user stops the follow for that answer.
 
 Three signals show the answer state, from most to least visible:
 

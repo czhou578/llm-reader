@@ -1,6 +1,6 @@
 // Scroll control for the answer pane. The pane registers its scroll element here, so commands can drive it.
-// Rule (DESIGN.md 5.5): the first line of a new answer goes to the top of the pane. The pane does not follow the end
-// of the stream. A user scroll stops the pin for the rest of that answer.
+// Rule: a new answer scrolls into view, and the pane follows the end of the stream as text arrives. A user scroll
+// stops the follow for the rest of that answer.
 
 let pane: HTMLElement | null = null;
 let pinnedId: string | null = null;
@@ -24,20 +24,20 @@ function messageTop(el: Element): number {
   return el.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop;
 }
 
-/** Pins a message to the top of the pane until the user scrolls. */
+/** Follows a message until the user scrolls: its start comes into view, then the pane keeps its end visible. */
 export function pinMessage(messageId: string): void {
   pinnedId = messageId;
   userScrolled = false;
   applyPin();
 }
 
-/** Call after each render. The pin target may only become reachable when more text arrives. */
+/** Call after each render. Each delta makes the message longer, so the pane scrolls to the end of the stream. */
 export function applyPin(): void {
   if (!pane || !pinnedId || userScrolled) return;
   const el = pane.querySelector(`[data-msg="${CSS.escape(pinnedId)}"]`);
   if (!el) return;
-  const top = Math.max(0, messageTop(el) - 12);
-  if (Math.abs(pane.scrollTop - top) > 1) pane.scrollTop = top;
+  const bottom = Math.max(0, pane.scrollHeight - pane.clientHeight);
+  if (Math.abs(pane.scrollTop - bottom) > 1) pane.scrollTop = bottom;
   lastSetTop = pane.scrollTop;
 }
 
