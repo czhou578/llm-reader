@@ -125,15 +125,26 @@ function createMarkdown(): MarkdownIt {
 
 let md: MarkdownIt | null = null;
 
+// A streamed answer renders again on each frame, with the same formulas each time. KaTeX is the slow part, so keep
+// its output. The oldest entry goes first when the cache is full.
+const MATH_CACHE_MAX = 500;
+const mathCache = new Map<string, string>();
+
 function renderMath(item: { tex: string; display: boolean } | undefined): string {
   if (!item) return '';
-  return katex.renderToString(item.tex, {
+  const key = `${item.display ? 'D' : 'I'}${item.tex}`;
+  const hit = mathCache.get(key);
+  if (hit !== undefined) return hit;
+  const html = katex.renderToString(item.tex, {
     displayMode: item.display,
     throwOnError: false,
     strict: 'ignore',
     trust: false,
     output: 'htmlAndMathml',
   });
+  if (mathCache.size >= MATH_CACHE_MAX) mathCache.delete(mathCache.keys().next().value!);
+  mathCache.set(key, html);
+  return html;
 }
 
 let purifier: ReturnType<typeof createDOMPurify> | null = null;
