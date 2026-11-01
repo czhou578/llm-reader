@@ -1,0 +1,27 @@
+# Approve each Dependabot PR and turn on auto-merge. GitHub merges the PR when the checks that the ruleset on main
+# requires pass. Repo settings this needs: "Allow auto-merge", and "Allow GitHub Actions to create and approve pull
+# requests" (Settings > Actions > General).
+name: Dependabot auto-merge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@v2
+      # pdfjs-dist is a manual merge. The segmenter offsets depend on its exact version (docs/design/architecture.md
+      # 2.1), and src/web/viewer/index.ts uses a pdf.js internal that a new version can change.
+      - if: ${{ !contains(steps.meta.outputs.dependency-names, 'pdfjs-dist') }}
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,22 @@
+# Weekly dependency updates. .github/workflows/dependabot-auto-merge.yml merges each update after CI passes.
+version: 2
+updates:
+  - package-ecosystem: npm # also covers pnpm and pnpm-lock.yaml
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # One PR for all minor and patch updates. A major update gets its own PR, so one break does not hold back the rest.
+      # pdfjs-dist stays out of the group: its PR is a manual merge (see the auto-merge workflow).
+      minor-and-patch:
+        update-types: [minor, patch]
+        exclude-patterns: [pdfjs-dist]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
