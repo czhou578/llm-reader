@@ -3,7 +3,7 @@ import type { DocId } from '../../shared/types.ts';
 import * as api from '../api/client.ts';
 import { mode } from '../commands/modes.ts';
 import { refreshUsage } from './ask.ts';
-import { activeRun, activeThreadId, askBox, doc, helpOpen, paletteOpen, showNotice, staged, threads, view } from './session.ts';
+import { activeRun, activeThreadId, askBox, doc, helpOpen, memory, paletteOpen, showNotice, staged, threads, view } from './session.ts';
 import { latestThread } from './target.ts';
 
 function docIdFromUrl(): string | null {
@@ -14,6 +14,9 @@ function resetReader(): void {
   doc.value = null;
   staged.value = null;
   threads.value = [];
+  // Per-thread values of the closed document; each holds page text. A reload empties them too, and ask.ts falls back to the thread.
+  memory.lastRequest.clear();
+  memory.threadContext.clear();
   activeThreadId.value = null;
   activeRun.value = null;
   askBox.value = null;

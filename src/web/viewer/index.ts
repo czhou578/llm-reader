@@ -258,6 +258,7 @@ export class Viewer implements ViewerApi {
     const lang = typeof info.Language === 'string' && info.Language ? info.Language : 'en';
     this.store = new PageStore(pdf, lang);
     this.store.onResegment = () => this.restage(false);
+    this.store.keep = (page) => this.holds(page);
     pdfViewer.setDocument(pdf);
     linkService.setDocument(pdf);
     if (this.labels) pdfViewer.setPageLabels(this.labels);
@@ -614,6 +615,27 @@ export class Viewer implements ViewerApi {
   private cursorTouches(page: number): boolean {
     const c = this.cursor;
     return !!c && page >= c.from.page && page <= c.to.page;
+  }
+
+  /**
+   * The pages that the page store must keep: the pages on screen, and the pages of the cursor, the selections, and
+   * the jump mark. restage() rebuilds the staged selection from them. The page on each side holds a unit that a page
+   * break splits, and the previous page text of a staged passage.
+   */
+  private holds(page: number): boolean {
+    const near = (a: PassageAnchor | undefined, b: PassageAnchor | undefined): boolean =>
+      !!a && !!b && page >= a.page - 1 && page <= b.page + 1;
+    const { cursor: c, savedSentence: s, mouse: m, jumpMark: j } = this;
+    const p = this.staged?.passage;
+    return (
+      (page >= this.visible.first && page <= this.visible.last) ||
+      near(c?.from, c?.to) ||
+      near(s?.from, s?.to) ||
+      near(m?.start, m?.end) ||
+      near(p?.start, p?.end) ||
+      near(j?.cursor?.from, j?.cursor?.to) ||
+      near(j?.mouse?.start, j?.mouse?.end)
+    );
   }
 
   /** True when any part of the cursor unit is inside the viewport. */
