@@ -23,6 +23,13 @@
   background: var(--lr-bg);
 }
 
+/* app.css gives every element border-box. pdf.js sizes its page divs for content-box and sets border-box itself where it
+   needs it. Under border-box, the 9 px page border made the canvas 18 px smaller than the text layer, so the text layer,
+   the highlights, and mouse selection drifted down the page. */
+.lr-viewer .pdfViewer .page {
+  box-sizing: content-box;
+}
+
 .lr-overlay {
   position: absolute;
   inset: 0;
